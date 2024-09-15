@@ -71,13 +71,15 @@ uint32_t to_grayscale( uint32_t pixel ) {
 }
 
 uint32_t blend_components( uint32_t fg, uint32_t bg, uint32_t alpha ) {
-  uint32_t y = (alpha * fg + (255 - alpha) * bg) / 255;
-  return make_pixel(get_r(y), get_g(y), get_b(y), alpha);
+  return (alpha * fg + (255 - alpha) * bg) / 255;
 }
 
 uint32_t blend_colors( uint32_t fg, uint32_t bg ) { // fg = foreground, bg = background?
-  uint32_t a = get_a(fg);
-  return 0;
+  uint32_t a = get_a(fg); // get foreground's opacity for overlay
+  uint8_t blend_r = blend_components(get_r(fg), get_r(bg), a);
+  uint8_t blend_g = blend_components(get_g(fg), get_g(bg), a);
+  uint8_t blend_b = blend_components(get_b(fg), get_b(bg), a);
+  return make_pixel(blend_r, blend_g, blend_b, a);
 }
 
 // Mirror input image horizontally.
@@ -88,7 +90,13 @@ uint32_t blend_colors( uint32_t fg, uint32_t bg ) { // fg = foreground, bg = bac
 //   output_img - pointer to the output Image (in which the transformed
 //                pixels should be stored)
 void imgproc_mirror_h( struct Image *input_img, struct Image *output_img ) {
-  // TODO: implement
+  for (int r = 0; r < input_img->height; r++){
+    for (int c = 0; c < input_img->width; c++) {
+      uint32_t pixel = input_img->data[(r * input_img->width) + c];
+      int index = (r * input_img->width) + (input_img->width - 1 - c);
+      output_img->data[index] = pixel;
+    }
+  }
 }
 
 // Mirror input image vertically.
@@ -99,7 +107,13 @@ void imgproc_mirror_h( struct Image *input_img, struct Image *output_img ) {
 //   output_img - pointer to the output Image (in which the transformed
 //                pixels should be stored)
 void imgproc_mirror_v( struct Image *input_img, struct Image *output_img ) {
-  // TODO: implement
+  for (int r = 0; r < input_img->height; r++){
+    for (int c = 0; c < input_img->width; c++) {
+      uint32_t pixel = input_img->data[(r * input_img->width) + c];
+      int index = ((input_img->height - 1 - r) * input_img->width) + c;
+      output_img->data[index] = pixel;
+    }
+  }
 }
 
 // Transform image by generating a grid of n x n smaller tiles created by
@@ -116,7 +130,7 @@ void imgproc_mirror_v( struct Image *input_img, struct Image *output_img ) {
 //     - the output can't be generated because at least one tile would
 //       be empty (i.e., have 0 width or height)
 int imgproc_tile( struct Image *input_img, int n, struct Image *output_img ) {
-  // TODO: implement
+  if (n < 1 || input_img->height / n < 1 || input_img->width / n < 1)
   return 0;
 }
 
@@ -151,5 +165,6 @@ void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
 //   and overlay image do not have the same dimensions
 int imgproc_composite( struct Image *base_img, struct Image *overlay_img, struct Image *output_img ) {
   // TODO: implement
+  //if()
   return 0;
 }
