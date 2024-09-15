@@ -6,6 +6,24 @@
 
 #include "image.h" // for struct Image and related functions
 
+int all_tiles_nonempty( int width, int height, int n );
+int determine_tile_w( int width, int n, int tile_col );
+int determine_tile_x_offset( int width, int n, int tile_col );
+int determine_tile_h( int height, int n, int tile_row );
+int determine_tile_y_offset( int height, int n, int tile_row );
+void copy_tile( struct Image *out_img, struct Image *img, int tile_row, int tile_col, int n );
+uint32_t get_r( uint32_t pixel );
+uint32_t get_g( uint32_t pixel );
+uint32_t get_b( uint32_t pixel );
+uint32_t get_a( uint32_t pixel );
+
+uint32_t make_pixel( uint32_t r, uint32_t g, uint32_t b, uint32_t a );
+uint32_t to_grayscale( uint32_t pixel );
+uint32_t blend_components( uint32_t fg, uint32_t bg, uint32_t alpha );
+uint32_t blend_colors( uint32_t fg, uint32_t bg );
+
+void print_binary(uint32_t n);
+
 // Mirror input image horizontally.
 // This transformation always succeeds.
 //

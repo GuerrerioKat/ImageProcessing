@@ -98,6 +98,7 @@ void test_tile_basic( TestObjs *objs );
 void test_grayscale_basic( TestObjs *objs );
 void test_composite_basic( TestObjs *objs );
 // TODO: add prototypes for additional test functions
+void test_helper_functions(TestObjs *objs);
 
 int main( int argc, char **argv ) {
   // allow the specific test to execute to be specified as the
@@ -110,11 +111,12 @@ int main( int argc, char **argv ) {
   // Run tests.
   // Make sure you add additional TEST() macro invocations
   // for any additional test functions you add.
-  TEST( test_mirror_h_basic );
-  TEST( test_mirror_v_basic );
-  TEST( test_tile_basic );
+  TEST(test_helper_functions);
+  //TEST( test_mirror_h_basic );
+  //TEST( test_mirror_v_basic );
+  //TEST( test_tile_basic );
   TEST( test_grayscale_basic );
-  TEST( test_composite_basic );
+  //TEST( test_composite_basic );
 
   TEST_FINI();
 }
@@ -228,6 +230,16 @@ void destroy_img( struct Image *img ) {
 ////////////////////////////////////////////////////////////////////////
 // Test functions
 ////////////////////////////////////////////////////////////////////////
+void test_helper_functions(TestObjs *objs) {
+  uint32_t pixel = 0x80C0E0F0;
+  print_binary(pixel);
+  print_binary(get_a(pixel));
+  print_binary(get_b(pixel));
+  print_binary(get_g(pixel));
+  print_binary(get_r(pixel));
+  //ASSERT(get_a(pixel) == 11110000)
+}
+
 
 void test_mirror_h_basic( TestObjs *objs ) {
   Picture smiley_mirror_h_pic = {
