@@ -11,7 +11,7 @@ ASMFLAGS = -g -no-pie -DASM_SOURCE
 LDFLAGS = -no-pie
 
 C_MAIN_SRCS = c_imgproc_main.c
-C_MAIN_OBJS = $(C_MA./IN_SRCS:.c=.o)
+C_MAIN_OBJS = $(C_MAIN_SRCS:.c=.o)
 
 C_FN_SRCS = c_imgproc_fns.c
 C_FN_OBJS = $(C_FN_SRCS:.c=.o)

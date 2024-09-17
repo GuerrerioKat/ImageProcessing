@@ -111,7 +111,7 @@ int main( int argc, char **argv ) {
   // Run tests.
   // Make sure you add additional TEST() macro invocations
   // for any additional test functions you add.
-  TEST(test_helper_functions);
+  TEST( test_helper_functions );
   TEST( test_mirror_h_basic );
   TEST( test_mirror_v_basic );
   TEST( test_tile_basic );
