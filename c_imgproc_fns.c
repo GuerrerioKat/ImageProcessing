@@ -45,7 +45,6 @@ int determine_tile_h( int height, int n, int tile_row ) {
   if (remainder > tile_row) {
     return (height / n) + 1;
   }
-  
   return height / n;
 }
 

@@ -98,7 +98,20 @@ void test_tile_basic( TestObjs *objs );
 void test_grayscale_basic( TestObjs *objs );
 void test_composite_basic( TestObjs *objs );
 // TODO: add prototypes for additional test functions
-void test_helper_functions(TestObjs *objs);
+void test_all_tiles_nonempty(TestObjs *objs);
+void test_determine_tile_w(TestObjs *objs);
+void test_determine_tile_x_offset(TestObjs *objs);
+void test_determine_tile_h(TestObjs *objs);
+void test_determine_tile_y_offset(TestObjs *objs);
+void test_copy_tile(TestObjs *objs);
+void test_get_r(TestObjs *objs);
+void test_get_g(TestObjs *objs);
+void test_get_b(TestObjs *objs);
+void test_get_a(TestObjs *objs);
+void test_make_pixel(TestObjs *objs);
+void test_to_grayscale(TestObjs *objs);
+void test_blend_components(TestObjs *objs);
+void test_blend_colors(TestObjs *objs);
 
 int main( int argc, char **argv ) {
   // allow the specific test to execute to be specified as the
@@ -111,7 +124,21 @@ int main( int argc, char **argv ) {
   // Run tests.
   // Make sure you add additional TEST() macro invocations
   // for any additional test functions you add.
-  TEST( test_helper_functions );
+  TEST ( test_all_tiles_nonempty );
+  TEST( test_determine_tile_w );
+  TEST( test_determine_tile_x_offset );
+  TEST( test_determine_tile_h );
+  TEST( test_determine_tile_y_offset );
+  TEST( test_copy_tile );
+  TEST( test_get_r );
+  TEST( test_get_g );
+  TEST( test_get_b );
+  TEST( test_get_a );
+  TEST( test_make_pixel );
+  TEST( test_to_grayscale );
+  TEST( test_blend_components );
+  TEST( test_blend_colors );
+
   TEST( test_mirror_h_basic );
   TEST( test_mirror_v_basic );
   TEST( test_tile_basic );
@@ -230,16 +257,177 @@ void destroy_img( struct Image *img ) {
 ////////////////////////////////////////////////////////////////////////
 // Test functions
 ////////////////////////////////////////////////////////////////////////
-void test_helper_functions(TestObjs *objs) {
-  uint32_t pixel = 0x80C0E0F0;
-  print_binary(pixel);
-  print_binary(get_a(pixel));
-  print_binary(get_b(pixel));
-  print_binary(get_g(pixel));
-  print_binary(get_r(pixel));
-  //ASSERT(get_a(pixel) == 11110000)
+void test_all_tiles_nonempty(TestObjs *objs) {
+  // tbh I do not know how to test this one
+  ASSERT(all_tiles_nonempty(1, 1, 1) == 1);
+  ASSERT(all_tiles_nonempty(1, 0, 1) == 0);
+  ASSERT(all_tiles_nonempty(0, 1, 1) == 0);
+  ASSERT(all_tiles_nonempty(1, 1, 0) == 0);
 }
 
+void test_determine_tile_w(TestObjs *objs) {
+  ASSERT(determine_tile_w(100, 10, 9) == 10);
+  ASSERT(determine_tile_w(101, 10, 0) == 11);
+  ASSERT(determine_tile_w(101, 10, 9) == 10);
+  ASSERT(determine_tile_w(5, 10, 0) == 1);
+  ASSERT(determine_tile_w(1, 1, 0) == 1);
+}
+
+void test_determine_tile_x_offset(TestObjs *objs) {
+  ASSERT(determine_tile_x_offset(100, 10, 0) == 0);
+  ASSERT(determine_tile_x_offset(100, 10, 1) == 10);
+  ASSERT(determine_tile_x_offset(101, 10, 1) == 11);
+  ASSERT(determine_tile_x_offset(5, 10, 0) == 0);
+  ASSERT(determine_tile_x_offset(10, 10, 1) == 1);
+}
+
+void test_determine_tile_h(TestObjs *objs) { // tile_w and tile_h do the same things so test the same
+  ASSERT(determine_tile_h(100, 10, 9) == 10);
+  ASSERT(determine_tile_h(101, 10, 0) == 11);
+  ASSERT(determine_tile_h(101, 10, 9) == 10);
+  ASSERT(determine_tile_h(5, 10, 0) == 1);
+  ASSERT(determine_tile_h(1, 1, 0) == 1);
+}
+
+void test_determine_tile_y_offset(TestObjs *objs) { // x_offset and y_offset are the same so test the same 
+  ASSERT(determine_tile_y_offset(100, 10, 0) == 0);
+  ASSERT(determine_tile_y_offset(100, 10, 1) == 10);
+  ASSERT(determine_tile_y_offset(101, 10, 1) == 11);
+  ASSERT(determine_tile_y_offset(5, 10, 0) == 0);
+  ASSERT(determine_tile_y_offset(10, 10, 1) == 1);
+}
+
+void test_copy_tile(TestObjs *objs) {
+  Picture smiley_mirror_h_pic = {
+    TEST_COLORS,
+    16, 10,
+    "    cbggrrrm    "
+    "   b        c   "
+    "  c   b  r   r  "
+    " b            b "
+    " r            b "
+    " r   c    b   g "
+    "  b   brgg   c  "
+    "   c        m   "
+    "    cmbrrggg    "
+    "                "
+  };
+  // struct Image *smiley_mirror_h_expected = picture_to_img( &smiley_mirror_h_pic );
+  // struct Image *copy = malloc(sizeof(struct Image));
+  // copy->width = 16;
+  // copy->height = 10;
+  // copy->data = calloc(16 * 10, sizeof(uint32_t));
+  // copy_tile(copy, smiley_mirror_h_expected, 1, 2, 2);
+  // ASSERT(images_equal(smiley_mirror_h_expected, copy));
+  // destroy_img( smiley_mirror_h_expected );
+  // destroy_img( copy );
+}
+
+void test_get_r(TestObjs *objs) {
+  uint32_t pixel = 0x80C0E0F0; // 10000000110000001110000011110000
+  print_binary(get_r(pixel)); // 00000000000000000000000010000000
+  ASSERT(get_r(pixel) == 0x80);
+  // can't really compare strings so had to look up decimal form of these
+}
+
+void test_get_g(TestObjs *objs) {
+  uint32_t pixel = 0x80C0E0F0;
+  print_binary(get_g(pixel)); // 00000000000000000000000011000000
+  ASSERT(get_g(pixel) == 0xC0);
+}
+
+void test_get_b(TestObjs *objs) {
+  uint32_t pixel = 0x80C0E0F0;
+  print_binary(get_b(pixel)); // 00000000000000000000000011100000
+  ASSERT(get_b(pixel) == 0xE0);
+}
+
+void test_get_a(TestObjs *objs) {
+  uint32_t pixel = 0x80C0E0F0;
+  print_binary(get_a(pixel)); // 00000000000000000000000011110000
+  ASSERT(get_a(pixel) == 0xF0);
+}
+
+void test_make_pixel(TestObjs *objs) {
+  uint32_t pixel = 0x80C0E0F0;
+  uint32_t madePixel = make_pixel(get_r(pixel), get_g(pixel), get_b(pixel), get_a(pixel));
+  ASSERT(madePixel == pixel);
+  madePixel = make_pixel(0x80, 0xC0, 0xE0, 0xF0);
+  ASSERT(madePixel == pixel);
+}
+
+void test_to_grayscale(TestObjs *objs) {
+  // r
+  uint32_t pixel = make_pixel(255, 0, 0, 255);
+  uint32_t expected = make_pixel(78, 78, 78, 255);
+  uint32_t result = to_grayscale(pixel);
+  ASSERT(result == expected);
+  
+  // g
+  pixel = make_pixel(0, 255, 0, 255); // green
+  expected = make_pixel(127, 127, 127, 255);
+  result = to_grayscale(pixel);
+  ASSERT(result == expected);
+  
+  // b
+  pixel = make_pixel(0, 0, 255, 255); // blue
+  expected = make_pixel(48, 48, 48, 255);
+  result = to_grayscale(pixel);
+  ASSERT(result == expected);
+
+  // white
+  pixel = make_pixel(255, 255, 255, 255); // white
+  expected = make_pixel(255, 255, 255, 255);
+  result = to_grayscale(pixel);
+  ASSERT(result == expected);
+  
+  // black
+  pixel = make_pixel(0, 0, 0, 255); // black
+  expected = make_pixel(0, 0, 0, 255);
+  result = to_grayscale(pixel);
+  ASSERT(result == expected);
+}
+
+void test_blend_components(TestObjs *objs) {
+  uint32_t fg = 100;
+  uint32_t bg = 200;
+  uint32_t alpha = 50;
+  uint32_t expected = (50 * 100 + (255 - 50) * 200) / 255;
+  uint32_t result = blend_components(fg, bg, alpha);
+  ASSERT(result == expected);
+
+  fg = 255;
+  bg = 0;
+  alpha = 0;
+  expected = (0 * 255 + (255 - 0) * 0) / 255;
+  result = blend_components(fg, bg, alpha);
+  ASSERT(result == expected);
+}
+
+void test_blend_colors(TestObjs *objs) {
+  uint32_t fg = make_pixel(255, 0, 0, 128); // half opacity
+  uint32_t bg = make_pixel(0, 255, 0, 255);
+  uint32_t expected = make_pixel(
+    (128 * 255 + (255 - 128) * 0) / 255,
+    (128 * 0 + (255 - 128) * 255) / 255,
+    (128 * 0 + (255 - 128) * 0) / 255,
+    255
+  );
+  uint32_t result = blend_colors(fg, bg);
+  ASSERT(result == expected);
+
+  fg = make_pixel(255, 0, 0, 0); // not visible
+  bg = make_pixel(0, 255, 0, 255);
+  expected = make_pixel(0, 255, 0, 255); // bg should be returned
+  result = blend_colors(fg, bg);
+  ASSERT(result == expected);
+
+  fg = make_pixel(255, 0, 0, 255);
+  bg = make_pixel(0, 255, 0, 0);
+  expected = make_pixel(255, 0, 0, 255); // fg should be returned
+  result = blend_colors(fg, bg);
+  ASSERT(result == expected);
+}
 
 void test_mirror_h_basic( TestObjs *objs ) {
   Picture smiley_mirror_h_pic = {
