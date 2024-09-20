@@ -56,6 +56,7 @@ int determine_tile_y_offset( int height, int n, int tile_row ) {
   return offset;
 }
 
+
 void copy_tile( struct Image *out_img, struct Image *img, int tile_row, int tile_col, int n ) {
   int tile_w = determine_tile_w(img->width, n, tile_col);
   int tile_h = determine_tile_h(img->height, n, tile_row);

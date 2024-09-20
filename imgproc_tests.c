@@ -298,54 +298,119 @@ void test_determine_tile_y_offset(TestObjs *objs) { // x_offset and y_offset are
 }
 
 void test_copy_tile(TestObjs *objs) {
-  Picture smiley_mirror_h_pic = {
+  Picture input_pic = {
     TEST_COLORS,
     16, 10,
-    "    cbggrrrm    "
-    "   b        c   "
-    "  c   b  r   r  "
-    " b            b "
-    " r            b "
-    " r   c    b   g "
-    "  b   brgg   c  "
-    "   c        m   "
-    "    cmbrrggg    "
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+    "cccccccccccccccc"
+  };
+
+  Picture output_pic = {
+    TEST_COLORS,
+    16, 10,
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
     "                "
   };
-  // struct Image *smiley_mirror_h_expected = picture_to_img( &smiley_mirror_h_pic );
-  // struct Image *copy = malloc(sizeof(struct Image));
-  // copy->width = 16;
-  // copy->height = 10;
-  // copy->data = calloc(16 * 10, sizeof(uint32_t));
-  // copy_tile(copy, smiley_mirror_h_expected, 1, 2, 2);
-  // ASSERT(images_equal(smiley_mirror_h_expected, copy));
-  // destroy_img( smiley_mirror_h_expected );
-  // destroy_img( copy );
+  
+  Picture expected_pic = {
+    TEST_COLORS,
+    16, 10,
+    "cccccccc        "
+    "cccccccc        "
+    "cccccccc        "
+    "cccccccc        "
+    "cccccccc        "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+  };
+
+  struct Image *input_img = picture_to_img( &input_pic );
+  struct Image *output_img = picture_to_img( &output_pic );
+  struct Image *expected_img = picture_to_img( &expected_pic );
+
+  copy_tile( output_img, input_img, 1, 1, 2 );
+
+  ASSERT( images_equal( output_img, expected_img ) );
+
+  destroy_img( input_img );
+  destroy_img( output_img );
+  destroy_img( expected_img );
+  
 }
 
 void test_get_r(TestObjs *objs) {
   uint32_t pixel = 0x80C0E0F0; // 10000000110000001110000011110000
-  print_binary(get_r(pixel)); // 00000000000000000000000010000000
   ASSERT(get_r(pixel) == 0x80);
-  // can't really compare strings so had to look up decimal form of these
+
+  pixel = 0x0;
+  ASSERT(get_r(pixel) == 0x0);
+
+  pixel = 0xabcdef91; 
+  ASSERT(get_r(pixel) == 0xab);
+
+  pixel = 0x739de7fa;
+  ASSERT(get_r(pixel) == 0x73);
 }
 
 void test_get_g(TestObjs *objs) {
   uint32_t pixel = 0x80C0E0F0;
-  print_binary(get_g(pixel)); // 00000000000000000000000011000000
   ASSERT(get_g(pixel) == 0xC0);
+
+  pixel = 0x0;
+  ASSERT(get_g(pixel) == 0x0);
+
+  pixel = 0xabcdef91;
+  ASSERT(get_g(pixel) == 0xcd);
+
+  pixel = 0x739de7fa; 
+  ASSERT(get_g(pixel) == 0x9d);
 }
 
 void test_get_b(TestObjs *objs) {
   uint32_t pixel = 0x80C0E0F0;
-  print_binary(get_b(pixel)); // 00000000000000000000000011100000
   ASSERT(get_b(pixel) == 0xE0);
+
+  pixel = 0x0;
+  ASSERT(get_b(pixel) == 0x0);
+
+  pixel = 0xabcdef91; 
+  ASSERT(get_b(pixel) == 0xef);
+
+  pixel = 0x739de7fa;
+  ASSERT(get_b(pixel) == 0xe7);
 }
 
 void test_get_a(TestObjs *objs) {
   uint32_t pixel = 0x80C0E0F0;
-  print_binary(get_a(pixel)); // 00000000000000000000000011110000
   ASSERT(get_a(pixel) == 0xF0);
+
+  pixel = 0x0;
+  ASSERT(get_a(pixel) == 0x0);
+
+  pixel = 0xabcdef91; 
+  ASSERT(get_a(pixel) == 0x91);
+
+  pixel = 0x739de7fa;
+  ASSERT(get_a(pixel) == 0xfa);
 }
 
 void test_make_pixel(TestObjs *objs) {
