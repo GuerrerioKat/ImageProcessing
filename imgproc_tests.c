@@ -298,44 +298,59 @@ void test_determine_tile_y_offset(TestObjs *objs) { // x_offset and y_offset are
 }
 
 void test_copy_tile(TestObjs *objs) {
-  Picture input_pic = {
-    TEST_COLORS,
-    16, 10,
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-    "cccccccccccccccc"
-  };
+  // Picture input_pic = {
+  //   TEST_COLORS,
+  //   16, 10,
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  //   "cccccccccccccccc"
+  // };
 
-  Picture output_pic = {
-    TEST_COLORS,
-    16, 10,
-    "                "
-    "                "
-    "                "
-    "                "
-    "                "
-    "                "
-    "                "
-    "                "
-    "                "
-    "                "
-  };
+  // Picture output_pic = {
+  //   TEST_COLORS,
+  //   16, 10,
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  // };
   
-  Picture expected_pic = {
+  // Picture expected_pic = {
+  //   TEST_COLORS,
+  //   16, 10,
+  //   "cccccccc        "
+  //   "cccccccc        "
+  //   "cccccccc        "
+  //   "cccccccc        "
+  //   "cccccccc        "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  //   "                "
+  // };
+
+  Picture smiley_tile_3_pic = {
     TEST_COLORS,
     16, 10,
-    "cccccccc        "
-    "cccccccc        "
-    "cccccccc        "
-    "cccccccc        "
-    "cccccccc        "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
     "                "
     "                "
     "                "
@@ -343,17 +358,27 @@ void test_copy_tile(TestObjs *objs) {
     "                "
   };
 
-  struct Image *input_img = picture_to_img( &input_pic );
-  struct Image *output_img = picture_to_img( &output_pic );
-  struct Image *expected_img = picture_to_img( &expected_pic );
+  Picture smiley_tile_3_pic = {
+    TEST_COLORS,
+    16, 10,
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+  };
 
-  copy_tile( output_img, input_img, 1, 1, 2 );
+  struct Image *smiley_tile_3_expected = picture_to_img( &smiley_tile_3_pic );
 
-  ASSERT( images_equal( output_img, expected_img ) );
+  copy_tile( objs->smiley_out, objs->smiley, 1, 1, 3 );
+  ASSERT( images_equal( smiley_tile_3_expected, objs->smiley_out ) );
 
-  destroy_img( input_img );
-  destroy_img( output_img );
-  destroy_img( expected_img );
+  destroy_img( smiley_tile_3_expected );
   
 }
 
