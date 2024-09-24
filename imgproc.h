@@ -22,8 +22,6 @@ uint32_t to_grayscale( uint32_t pixel );
 uint32_t blend_components( uint32_t fg, uint32_t bg, uint32_t alpha );
 uint32_t blend_colors( uint32_t fg, uint32_t bg );
 
-void print_binary(uint32_t n);
-
 // Mirror input image horizontally.
 // This transformation always succeeds.
 //

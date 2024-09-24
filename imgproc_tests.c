@@ -138,7 +138,7 @@ int main( int argc, char **argv ) {
   TEST( test_to_grayscale );
   TEST( test_blend_components );
   TEST( test_blend_colors );
-
+  
   TEST( test_mirror_h_basic );
   TEST( test_mirror_v_basic );
   TEST( test_tile_basic );
@@ -263,6 +263,10 @@ void test_all_tiles_nonempty(TestObjs *objs) {
   ASSERT(all_tiles_nonempty(1, 0, 1) == 0);
   ASSERT(all_tiles_nonempty(0, 1, 1) == 0);
   ASSERT(all_tiles_nonempty(1, 1, 0) == 0);
+
+  ASSERT(all_tiles_nonempty(100, 100, 0) == 0);
+  ASSERT(all_tiles_nonempty(100, 100, 50) == 1);
+  ASSERT(all_tiles_nonempty(100, 40, 50) == 0);
 }
 
 void test_determine_tile_w(TestObjs *objs) {
@@ -298,52 +302,22 @@ void test_determine_tile_y_offset(TestObjs *objs) { // x_offset and y_offset are
 }
 
 void test_copy_tile(TestObjs *objs) {
-  // Picture input_pic = {
-  //   TEST_COLORS,
-  //   16, 10,
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  //   "cccccccccccccccc"
-  // };
+  Picture expected_pic1 = {
+    TEST_COLORS,
+    16, 10,
+    "                "
+    "                "
+    "                "
+    "                "
+    "        rg      "
+    "                "
+    "        gb      "
+    "                "
+    "                "
+    "                "
+  };
 
-  // Picture output_pic = {
-  //   TEST_COLORS,
-  //   16, 10,
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  // };
-  
-  // Picture expected_pic = {
-  //   TEST_COLORS,
-  //   16, 10,
-  //   "cccccccc        "
-  //   "cccccccc        "
-  //   "cccccccc        "
-  //   "cccccccc        "
-  //   "cccccccc        "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  //   "                "
-  // };
-
-  Picture smiley_tile_3_pic = {
+  Picture output_pic = {
     TEST_COLORS,
     16, 10,
     "                "
@@ -358,7 +332,31 @@ void test_copy_tile(TestObjs *objs) {
     "                "
   };
 
-  Picture smiley_tile_3_pic = {
+  struct Image *output_img1 = picture_to_img( &output_pic );
+  struct Image *expected_img1 = picture_to_img( &expected_pic1 );
+
+  copy_tile( output_img1, objs->smiley, 1, 1, 3 );
+  ASSERT( images_equal( expected_img1, output_img1 ) );
+
+  destroy_img( output_img1 );
+  destroy_img( expected_img1 );
+
+  Picture expected_pic2 = {
+    TEST_COLORS,
+    16, 10,
+    "                "
+    "                "
+   "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "             rg "
+    "                "
+    "             gb "
+  };
+
+  Picture output_pic2 = {
     TEST_COLORS,
     16, 10,
     "                "
@@ -373,13 +371,54 @@ void test_copy_tile(TestObjs *objs) {
     "                "
   };
 
-  struct Image *smiley_tile_3_expected = picture_to_img( &smiley_tile_3_pic );
+  struct Image *output_img2 = picture_to_img( &output_pic2 );
+  struct Image *expected_img2 = picture_to_img( &expected_pic2 );
 
-  copy_tile( objs->smiley_out, objs->smiley, 1, 1, 3 );
-  ASSERT( images_equal( smiley_tile_3_expected, objs->smiley_out ) );
+  copy_tile( output_img2, objs->smiley, 2, 2, 3 );
+  ASSERT( images_equal( expected_img2, output_img2 ) );
 
-  destroy_img( smiley_tile_3_expected );
-  
+  destroy_img( output_img2 );
+  destroy_img( expected_img2 );
+
+Picture expected_pic3 = {
+    TEST_COLORS,
+    16, 10,
+    "  rg            "
+    "                "
+    "  gb            "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+  };
+
+  Picture output_pic3 = {
+    TEST_COLORS,
+    16, 10,
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+    "                "
+  };
+
+  struct Image *output_img3 = picture_to_img( &output_pic3 );
+  struct Image *expected_img3 = picture_to_img( &expected_pic3 );
+
+  copy_tile( output_img3, objs->smiley, 0, 0, 3 );
+  ASSERT( images_equal( expected_img3, output_img3 ) );
+
+  destroy_img( output_img3 );
+  destroy_img( expected_img3 );
+
 }
 
 void test_get_r(TestObjs *objs) {
@@ -442,8 +481,24 @@ void test_make_pixel(TestObjs *objs) {
   uint32_t pixel = 0x80C0E0F0;
   uint32_t madePixel = make_pixel(get_r(pixel), get_g(pixel), get_b(pixel), get_a(pixel));
   ASSERT(madePixel == pixel);
+  
   madePixel = make_pixel(0x80, 0xC0, 0xE0, 0xF0);
   ASSERT(madePixel == pixel);
+
+  uint32_t result = make_pixel(255, 0, 0, 255);
+  ASSERT(result == 0xFF0000FF);
+
+  result = make_pixel(0, 255, 0, 255);
+  ASSERT(result == 0x00FF00FF);
+
+  result = make_pixel(0, 0, 255, 255);
+  ASSERT(result == 0x0000FFFF);
+
+  result = make_pixel(0, 0, 0, 0);
+  ASSERT(result == 0x00000000);
+
+  result = make_pixel(128, 128, 128, 128);
+  ASSERT(result == 0x80808080);
 }
 
 void test_to_grayscale(TestObjs *objs) {
@@ -489,34 +544,48 @@ void test_blend_components(TestObjs *objs) {
   fg = 255;
   bg = 0;
   alpha = 0;
+  
   expected = (0 * 255 + (255 - 0) * 0) / 255;
+  result = blend_components(fg, bg, alpha);
+  ASSERT(result == expected);
+
+  fg = 0;
+  bg = 255;
+  alpha = 10;
+  expected = (10 * 0 + (255 - 10) * 255) / 255;
   result = blend_components(fg, bg, alpha);
   ASSERT(result == expected);
 }
 
 void test_blend_colors(TestObjs *objs) {
-  uint32_t fg = make_pixel(255, 0, 0, 128); // half opacity
-  uint32_t bg = make_pixel(0, 255, 0, 255);
-  uint32_t expected = make_pixel(
+  uint32_t forg = make_pixel(255, 0, 0, 128); // half opacity
+  uint32_t bacg = make_pixel(0, 255, 0, 255);
+  uint32_t expectedBlend = make_pixel(
     (128 * 255 + (255 - 128) * 0) / 255,
     (128 * 0 + (255 - 128) * 255) / 255,
     (128 * 0 + (255 - 128) * 0) / 255,
     255
   );
-  uint32_t result = blend_colors(fg, bg);
-  ASSERT(result == expected);
+  uint32_t resultBlend = blend_colors(forg, bacg);
+  ASSERT(resultBlend == expectedBlend);
 
-  fg = make_pixel(255, 0, 0, 0); // not visible
-  bg = make_pixel(0, 255, 0, 255);
-  expected = make_pixel(0, 255, 0, 255); // bg should be returned
-  result = blend_colors(fg, bg);
-  ASSERT(result == expected);
+  forg = make_pixel(255, 0, 0, 0); // not visible
+  bacg = make_pixel(0, 255, 0, 255);
+  expectedBlend = make_pixel(0, 255, 0, 255); // bg should be returned
+  resultBlend = blend_colors(forg, bacg);
+  ASSERT(resultBlend == expectedBlend);
 
-  fg = make_pixel(255, 0, 0, 255);
-  bg = make_pixel(0, 255, 0, 0);
-  expected = make_pixel(255, 0, 0, 255); // fg should be returned
-  result = blend_colors(fg, bg);
-  ASSERT(result == expected);
+  forg = make_pixel(255, 0, 0, 255);
+  bacg = make_pixel(0, 255, 0, 0);
+  expectedBlend = make_pixel(255, 0, 0, 255); // fg should be returned
+  resultBlend = blend_colors(forg, bacg);
+  ASSERT(resultBlend == expectedBlend);
+
+  forg = make_pixel(100, 150, 200, 128);
+  bacg = make_pixel(50, 100, 150, 255);
+  expectedBlend = make_pixel(75, 125, 175, 255);
+  resultBlend = blend_colors(forg, bacg);
+  ASSERT(resultBlend == expectedBlend);
 }
 
 void test_mirror_h_basic( TestObjs *objs ) {
@@ -637,4 +706,3 @@ void test_composite_basic( TestObjs *objs ) {
   ASSERT( 0x0000FFFF == objs->smiley_out->data[86] );
   ASSERT( 0x000080FF == objs->smiley_out->data[87] );
 }
-

@@ -15,6 +15,169 @@
  * them visible to the test code.
  */
 
+	.globl all_tiles_nonempty
+all_tiles_nonempty:
+	ret
+
+	.globl determine_tile_w
+determine_tile_w:
+	ret
+
+ 	.globl determine_tile_x_offset
+determine_tile_x_offset:
+	ret
+
+ 	.globl determine_tile_h
+determine_tile_h:
+	ret
+
+ 	.globl determine_tile_y_offset
+ determine_tile_y_offset:
+	ret
+
+ 	.globl copy_tile
+ copy_tile:
+	ret
+
+ /*
+ * uint32_t get_r( uint32_t pixel );
+ *
+ * Returns the red component of a pixel.
+ * This transformation always succeeds.
+ *
+ * Parameters:
+ *   %edi - pointer to the pixel
+ */
+	.globl get_r
+get_r:
+	movl %edi, %eax
+	shrl $24, %eax
+	and $0xFF, %eax
+	ret
+
+	.globl get_g
+get_g:
+	movl %edi, %eax
+	shrl $16, %eax
+	and $0xFF, %eax
+	ret
+
+	.globl get_b
+get_b:
+	movl %edi, %eax
+	shrl $8, %eax
+	and $0xFF, %eax
+	ret
+
+	.globl get_a
+get_a:
+	movl %edi, %eax
+	and $0xFF, %eax
+	ret
+
+/*
+ * uint32_t make_pixel( uint32_t r, uint32_t g, uint32_t b, uint32_t a );
+ *
+ * Returns the a new pixel based on the 4 components.
+ * This transformation always succeeds.
+ *
+ * Parameters:
+ *   %edi - red pixel value
+ *   %esi - green pixel value
+ *   %edx - blue pixel value
+ *   %ecx - alpha pixel value
+ */
+	.globl make_pixel
+make_pixel:
+	shll $24, %edi
+	shll $16, %esi
+	shll $8, %edx
+	or %edi, %esi
+	or %esi, %edx
+	or %edx, %ecx // bitwise or for each rgba
+	movl %ecx, %eax
+	ret
+
+/*
+ * uint32_t to_grayscale( uint32_t pixel );
+ *
+ * Returns the a new pixel based on the 4 components.
+ * This transformation always succeeds.
+ *
+ * Parameters:
+ *   %edi - pixel value
+ */
+	.globl to_grayscale
+to_grayscale:
+	// getting the pixel values
+	call get_r
+	movl %eax, %r10d
+
+	call get_g
+	movl %eax, %r11d
+
+	call get_b
+	movl %eax, %r12d
+
+	call get_a
+	movl %eax, %r13d
+
+	//doing the greyscale calculation
+	imull $79, %r10d
+	imull $128, %r11d
+	addl %r10d, %r11d
+	imull $49, %r12d
+  	addl %r11d, %r12d
+	
+	movl %r12d, %eax
+	movl $256, %r14d //256 is too big for a 32 bit value 
+	divl %r14d
+	
+	//calling the make_pixel function
+	movl %r12d, %edi
+	movl %r12d, %esi
+	movl %r12d, %edx
+	movl %r13d, %ecx
+	call make_pixel
+
+	ret
+
+/*
+ * uint32_t blend_components( uint32_t fg, uint32_t bg, uint32_t alpha );
+ *
+ * Returns the a new pixel based on the 4 components.
+ * This transformation always succeeds.
+ *
+ * Parameters:
+ *   %edi - red pixel value
+ *   %esi - green pixel value
+ *   %edx - blue pixel value
+ *   %ecx - alpha pixel value
+ */
+	.globl blend_components
+blend_components:
+  	/*return (alpha * fg + (255 - alpha) * bg) / 255;*/
+	ret
+
+/*
+ * uint32_t blend_colors( uint32_t fg, uint32_t bg );
+ *
+ * Returns the a new pixel based on the 4 components.
+ * This transformation always succeeds.
+ *
+ * Parameters:
+ *   %edi - fg value
+ *   %esi - bg value
+ */
+	.globl blend_colors
+blend_colors:
+	/* uint32_t a = get_a(fg); // get foreground's opacity for overlay
+	uint8_t blend_r = blend_components(get_r(fg), get_r(bg), a);
+	uint8_t blend_g = blend_components(get_g(fg), get_g(bg), a);
+	uint8_t blend_b = blend_components(get_b(fg), get_b(bg), a);
+	return make_pixel(blend_r, blend_g, blend_b, 255); */
+	ret
+
 /*
  * Implementations of API functions
  */

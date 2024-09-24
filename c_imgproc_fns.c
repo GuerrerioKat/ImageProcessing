@@ -8,22 +8,12 @@
 #include <sys/ucontext.h>
 #include "imgproc.h"
 
-// TODO: define your helper functions here
-void print_binary(uint32_t n) {
-  for (int i = 31; i >= 0; i--) {
-    if (n & (1 << i)) {
-      printf("1");
-    } else {
-      printf("0");
-    }
-  }
-  printf("\n");
-}
-
+//checks if any of the tiles would be empty based on the tiling factor
 int all_tiles_nonempty( int width, int height, int n ) {
   return !(n < 1 || (height / n) < 1 || (width / n) < 1);
 }
 
+//determines the specific width of a tile in a certain column. Takes into account any extra width if the image width isn't divisible by n
 int determine_tile_w( int width, int n, int tile_col ) {
   int remainder = width % n;//if it's not completly divisible (excess is distributed eveling across the earlier tiles)
   if (remainder > tile_col) {
@@ -32,6 +22,7 @@ int determine_tile_w( int width, int n, int tile_col ) {
   return width / n;
 }
 
+//determines how far the next tile should start in the x direction
 int determine_tile_x_offset( int width, int n, int tile_col ) {
   int offset = 0;
   for (int i = 0; i < tile_col; i++) {
@@ -40,6 +31,7 @@ int determine_tile_x_offset( int width, int n, int tile_col ) {
   return offset;
 }
 
+//determines the specific height of a tile in a certain row. Takes into account any extra height if the image height isn't divisible by n
 int determine_tile_h( int height, int n, int tile_row ) {
   int remainder = height % n;//if it's not completly divisible (excess is distributed eveling across the earlier tiles)
   if (remainder > tile_row) {
@@ -48,6 +40,7 @@ int determine_tile_h( int height, int n, int tile_row ) {
   return height / n;
 }
 
+//determines how far the next tile should start in the y direction
 int determine_tile_y_offset( int height, int n, int tile_row ) {
   int offset = 0;
   for (int i = 0; i < tile_row; i++) {
@@ -56,7 +49,7 @@ int determine_tile_y_offset( int height, int n, int tile_row ) {
   return offset;
 }
 
-
+//creates a single tile in the image
 void copy_tile( struct Image *out_img, struct Image *img, int tile_row, int tile_col, int n ) {
   int tile_w = determine_tile_w(img->width, n, tile_col);
   int tile_h = determine_tile_h(img->height, n, tile_row);
@@ -78,37 +71,45 @@ void copy_tile( struct Image *out_img, struct Image *img, int tile_row, int tile
   }
 }
 
+//returns the red component of the pixel
 uint32_t get_r( uint32_t pixel ) {
   return (pixel >> 24) & 0xFF;
 }
 
+//returns the green component of a pixel
 uint32_t get_g( uint32_t pixel ) {
   return (pixel >> 16) & 0xFF;
 }
 
+//returns the blue component of a pixel
 uint32_t get_b( uint32_t pixel ) {
   return (pixel >> 8) & 0xFF;
 }
 
+//returns the alpha value of a pixel
 uint32_t get_a( uint32_t pixel ) {
   return pixel & 0xFF;
 }
 
+//based on red, green, blue, and alpha values, it creates a new pixel with those values
 uint32_t make_pixel( uint32_t r, uint32_t g, uint32_t b, uint32_t a ) {
   uint32_t pixel = (r << 24) | (g << 16) | (b << 8) | a;
   return pixel;
 }
 
+//calculates the greyscale color value and returns a new greyscale pixel
 uint32_t to_grayscale( uint32_t pixel ) {
   uint8_t y = (79 * get_r(pixel) + 128 * get_g(pixel) + 49 * get_b(pixel)) / 256;
   return make_pixel(y, y, y, get_a(pixel));
 }
 
+//performs the blendign calculation on a single color
 uint32_t blend_components( uint32_t fg, uint32_t bg, uint32_t alpha ) {
   return (alpha * fg + (255 - alpha) * bg) / 255;
 }
 
-uint32_t blend_colors( uint32_t fg, uint32_t bg ) { // fg = foreground, bg = background?
+//blends all three color components and returns a new pixel with those values
+uint32_t blend_colors( uint32_t fg, uint32_t bg ) { // fg = foreground, bg = background
   uint32_t a = get_a(fg); // get foreground's opacity for overlay
   uint8_t blend_r = blend_components(get_r(fg), get_r(bg), a);
   uint8_t blend_g = blend_components(get_g(fg), get_g(bg), a);
