@@ -109,7 +109,8 @@ make_pixel:
  */
 	.globl to_grayscale
 to_grayscale:
-	// getting the pixel values
+	/* getting the pixel values */
+
 	call get_r
 	movl %eax, %r10d
 
@@ -117,12 +118,14 @@ to_grayscale:
 	movl %eax, %r11d
 
 	call get_b
+	/* pushq %r12d */
 	movl %eax, %r12d
 
 	call get_a
+	/* pushq %r13d */
 	movl %eax, %r13d
 
-	//doing the greyscale calculation
+	/* doing the greyscale calculation */
 	imull $79, %r10d
 	imull $128, %r11d
 	addl %r10d, %r11d
@@ -130,13 +133,13 @@ to_grayscale:
   	addl %r11d, %r12d
 	
 	movl %r12d, %eax
-	movl $256, %r14d //256 is too big for a 32 bit value 
+	movl $256, %r14d /*256 is too big for a 32 bit value*/
 	divl %r14d
 	
-	//calling the make_pixel function
-	movl %r12d, %edi
-	movl %r12d, %esi
-	movl %r12d, %edx
+	/*calling the make_pixel function*/
+	movl %eax, %edi
+	movl %eax, %esi
+	movl %eax, %edx
 	movl %r13d, %ecx
 	call make_pixel
 
@@ -194,7 +197,39 @@ blend_colors:
  */
 	.globl imgproc_mirror_h
 imgproc_mirror_h:
-	/* TODO: implement */
+	/* 
+	for (int r = 0; r < input_img->height; r++){
+		for (int c = 0; c < input_img->width; c++) {
+			uint32_t pixel = input_img->data[(r * input_img->width) + c];
+			int index = (r * input_img->width) + (input_img->width - 1 - c);
+			output_img->data[index] = pixel;
+		}
+	}
+	*/
+	
+	/* for puproses rn, assume %r12 holds input_img->height, %r13 hold input_img->width */
+
+	movl $0, %r10
+
+	.LrowLoop:
+		cmpl %r12, %r10
+		jge .LrowLoopEnd
+
+		movl $0, %r11
+		.LcolLoop
+
+	.LcolLoop:
+		cmpl %r13, %r11
+		jge .LcolLoopEnd
+
+		incl %r11
+
+	.LcolLoopEnd:
+		incl %r10
+		jmp .LrowLoop
+	
+	.LrowLoopEnd:
+
 	ret
 
 /*
