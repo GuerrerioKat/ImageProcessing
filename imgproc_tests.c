@@ -461,7 +461,7 @@ void test_get_b(TestObjs *objs) {
 
   pixel = 0x739de7fa;
   ASSERT(get_b(pixel) == 0xe7);
-}
+} 
 
 void test_get_a(TestObjs *objs) {
   uint32_t pixel = 0x80C0E0F0;
