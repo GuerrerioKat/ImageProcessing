@@ -207,10 +207,6 @@ blend_colors:
  */
 	.globl imgproc_mirror_h
 imgproc_mirror_h:	
-	/* for puproses rn, assume %r12 holds input_img->height, %r13 hold input_img->width */
-	/* can put caller saved registers since not calling any fucntions */
-	/* r12 and above are callee saved */
-	
 	/* ABI complient stackframe, meaningful stack trace in gdb */
 	pushq %rbp
 	movq %rsp, %rbp
@@ -219,56 +215,54 @@ imgproc_mirror_h:
 	pushq %r12
 	pushq %r13
 	pushq %r14
+	pushq %rbx
+	pushq %rbp
 	
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r10d /* move source image width to %r10d */
 	movl IMAGE_HEIGHT_OFFSET(%rdi), %r11d /* move source image height to %r11d */
-	movq IMAGE_DATA_OFFSET(%rdi), %rdx /* move pointer to source data array to %rdx */
-	movq IMAGE_DATA_OFFSET(%rsi), %r14 /* move pointer to output source data array to %14 */
+	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rbx */
+	movq IMAGE_DATA_OFFSET(%rsi), %rbp /* move pointer to output source data array to %14 */
 
-	movl $0, %ecx /* initializing my outer loop counter to 0  (r)*/
+	movl $0, %r8d /* initializing my outer loop counter to 0 (r)*/
 
 	.LrowLoopH:
-		cmpl %r11d, %ecx
-		jge .LrowLoopHEnd
+		cmpl %r11d, %r8d /* r8d >= r10 -> r >= input height */
+		jge .LrowLoopHEnd /* if true, end row loop */
 
-		movl $0, %r8d /* initializing my inner loop counter to 0 (c) */
+		movl $0, %r9d /* initializing my inner loop counter to 0 (c) */
 
 	.LcolLoopH:
-		cmpl %r10d, %r8d
-		jge .LcolLoopHEnd
+		cmpl %r10d, %r9d /* r9 >= r11 -> c >= input width */
+		jge .LcolLoopHEnd /* if true, end column loop */
 		
 		/* Calculate index in input image array (r * width) + c */
-		movl %ecx, %r9d
-		imull %r10d, %r9d
-		addl %r8d, %r9d
+		movl %r8d, %r12d /* moving r into final index registrar */
+		imull %r10d, %r12d /* width * r */
+		addl %r9d, %r12d /* (r * width) + c */
 		
 		/* Load pixel value from input_img->data[(r * input_img->width) + c] */
-		movl (%rdx, %r9, 4), %r12d /* %rdx + (%r9d * 4) */
+		movl (%rbx, %r12, 4), %r14d /* %rbx + (%r12d * 4) */
 
 		/* Calculate index for output image array (r * width) + (width - 1 - c) */
-		/* movl %ecx, %r13d
-		imull %r10d, %r13d
-		addl %r10d, %r13d
-		subl %r8d, %r13d
-		decl %r13d */
-
-		movl %r10d, %r13d
-		imull %ecx, %r13d
-		addl %r10d, %r13d
-		subl %r8d, %r13d
-		decl %r13d
+		movl %r8d, %r13d /* moving r into mirrored index for output image */
+		imull %r10d, %r13d /* r * width */
+		addl %r10d, %r13d /* (r * width) + width */
+		subl %r9d, %r13d /* (r * width) + width - c */
+		decl %r13d /* (r * width) + width - c - 1 */
 
 		/* Store pixel in output_img->data[index] */
-		movl %r12d, (%r14d, %r13d, 4)
+		movl %r14d, (%rbp, %r13, 4)
 
-		incl %r8d
+		incl %r9d
 		jmp .LcolLoopH
 
 	.LcolLoopHEnd:
-		incl %ecx
+		incl %r8d
 		jmp .LrowLoopH
 	
 	.LrowLoopHEnd:
+		popq %rbp
+		popq %rbx
 		popq %r14
 		popq %r13
 		popq %r12
@@ -297,50 +291,54 @@ imgproc_mirror_v:
 	pushq %r12
 	pushq %r13
 	pushq %r14
+	pushq %rbx
+	pushq %rbp
 	
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r10d /* move source image width to %r10d */
 	movl IMAGE_HEIGHT_OFFSET(%rdi), %r11d /* move source image height to %r11d */
-	movq IMAGE_DATA_OFFSET(%rdi), %rdx /* move pointer to source data array to %rdx */
-	movq IMAGE_DATA_OFFSET(%rsi), %r14 /* move pointer to output source data array to %14 */
+	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rbx */
+	movq IMAGE_DATA_OFFSET(%rsi), %rbp /* move pointer to output source data array to %14 */
 
-	movl $0, %ecx /* initializing my outer loop counter to 0  (r)*/
+	movl $0, %r8d /* initializing my outer loop counter to 0 (r)*/
 
 	.LrowLoopV:
-		cmpl %r11d, %ecx
-		jge .LrowLoopVEnd
+		cmpl %r11d, %r8d /* r8d >= r10 -> r >= input height */
+		jge .LrowLoopVEnd /* if true, end row loop */
 
-		movl $0, %r8d /* initializing my inner loop counter to 0 (c) */
+		movl $0, %r9d /* initializing my inner loop counter to 0 (c) */
 
 	.LcolLoopV:
-		cmpl %r10d, %r8d
-		jge .LcolLoopVEnd
+		cmpl %r10d, %r9d /* r9 >= r11 -> c >= input width */
+		jge .LcolLoopVEnd /* if true, end column loop */
 		
 		/* Calculate index in input image array (r * width) + c */
-		movl %ecx, %r9d
-		imull %r10d, %r9d
-		addl %r8d, %r9d
+		movl %r8d, %r12d /* moving r into final index registrar */
+		imull %r10d, %r12d /* width * r */
+		addl %r9d, %r12d /* (r * width) + c */
 		
 		/* Load pixel value from input_img->data[(r * input_img->width) + c] */
-		movl (%rdx, %r9, 4), %r12d /* %rdx + (%r9d * 4) */
+		movl (%rbx, %r12, 4), %r14d /* %rbx + (%r12d * 4) */
 
-		/* Calculate index for output image array ((input_img->height - 1 - r) * input_img->width) + c */
-		movl %r11d, %r13d
-		decl %r13d
-		subl %ecx, %r13d
-		imull %r10d, %r13d
-		addl %r8d, %r13d
+		/* Calculate index for output image array (input_img->height - 1 - r) * input_img->width) + c */
+		movl %r11d, %r13d /* moving the height into mirrored index for output image */
+		decl %r13d /* height - 1 */
+		subl %r8d, %r13d /* height - 1 - r */
+		imull %r10d, %r13d /* ((height - 1 - r) * width) */
+		addl %r9d, %r13d /* ((height - 1 - r) * width) + c */
 
 		/* Store pixel in output_img->data[index] */
-		movl %r12d, (%r14d, %r13d, 4)
+		movl %r14d, (%rbp, %r13, 4)
 
-		incl %r8d
+		incl %r9d
 		jmp .LcolLoopV
 
 	.LcolLoopVEnd:
-		incl %ecx
+		incl %r8d
 		jmp .LrowLoopV
 	
 	.LrowLoopVEnd:
+		popq %rbp
+		popq %rbx
 		popq %r14
 		popq %r13
 		popq %r12
