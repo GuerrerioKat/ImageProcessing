@@ -50,29 +50,29 @@ determine_tile_h:
  */
 	.globl get_r
 get_r:
-	movl %edi, %eax
-	shrl $24, %eax
-	and $0xFF, %eax
+	movl %edi, %eax /* move parameter into return value */
+	shrl $24, %eax /* shift right by 24 */
+	and $0xFF, %eax /* bitwise and with 0xFF */
 	ret
 
 	.globl get_g
 get_g:
-	movl %edi, %eax
-	shrl $16, %eax
-	and $0xFF, %eax
+	movl %edi, %eax /* move parameter into return value */
+	shrl $16, %eax /* shift right by 16 */
+	and $0xFF, %eax /* bitwise and with 0xFF */
 	ret
 
 	.globl get_b
 get_b:
-	movl %edi, %eax
-	shrl $8, %eax
-	and $0xFF, %eax
+	movl %edi, %eax /* move parameter into return value */
+	shrl $8, %eax /* shift right by 8 */
+	and $0xFF, %eax /* bitwise and with 0xFF */
 	ret
 
 	.globl get_a
 get_a:
-	movl %edi, %eax
-	and $0xFF, %eax
+	movl %edi, %eax /* move parameter into return value */
+	and $0xFF, %eax /* bitwise and with 0xFF */
 	ret
 
 /*
@@ -89,13 +89,14 @@ get_a:
  */
 	.globl make_pixel
 make_pixel:
-	shll $24, %edi
-	shll $16, %esi
-	shll $8, %edx
-	or %edi, %esi
+	shll $24, %edi /* shift red left by 24 */
+	shll $16, %esi /* shift green left by 16 */
+	shll $8, %edx /* shift blue left by 8 */
+	/* no need to shift a left */
+	or %edi, %esi /* bitwise or for each rgba */
 	or %esi, %edx
-	or %edx, %ecx // bitwise or for each rgba
-	movl %ecx, %eax
+	or %edx, %ecx
+	movl %ecx, %eax /* move that final result to the return value */
 	ret
 
 /*
@@ -109,15 +110,14 @@ make_pixel:
  */
 	.globl to_grayscale
 to_grayscale:
-
-	pushq %r12
+	pushq %r12 /* push these registers to stack */
 	pushq %r13
 	pushq %r14
 	pushq %r15
 	pushq %rbx
 
-	call get_r
-	movl %eax, %ebx
+	call get_r /* call each get rgba function for calculations */
+	movl %eax, %ebx /* move value from call onto registers */
 
 	call get_g
 	movl %eax, %r12d
@@ -129,25 +129,25 @@ to_grayscale:
 	movl %eax, %r14d
 
 	/* doing the greyscale calculation */
-	imull $79, %ebx
-	imull $128, %r12d
-	addl %ebx, %r12d
-	imull $49, %r13d
-  	addl %r12d, %r13d
+	imull $79, %ebx /* multiply 79 by the r value */
+	imull $128, %r12d /* multiply 128 by the g value */
+	addl %ebx, %r12d /* add the two together */
+	imull $49, %r13d /* multiply 49 by the b value */
+  	addl %r12d, %r13d /* adds all rgb (+ coefficient) values together */
 	
-	movl %r13d, %eax
-	movl $256, %r15d
+	movl %r13d, %eax /* move the sum calculated above into return value */
+	movl $256, %r15d /* will be dividing total sum by 256, represented by %r15d */
 	movl $0, %edx /* high 32 bits, need to manually push 0 in there */
-	divl %r15d
+	divl %r15d /* divide by 256 and put into %r15d --> notice it's callee-saved */
 	
 	/*calling the make_pixel function*/
-	movl %eax, %edi
-	movl %eax, %esi
+	movl %eax, %edi /* create the parameters for make_pixel function */
+	movl %eax, %esi /* first three parameters of function are all the same */
 	movl %eax, %edx
-	movl %r14d, %ecx
+	movl %r14d, %ecx /* last parameter is a value */
 	call make_pixel
 
-	popq %rbx
+	popq %rbx /* pop registers from stack */
 	popq %r15
 	popq %r14
 	popq %r13
@@ -169,7 +169,7 @@ to_grayscale:
  */
 	.globl blend_components
 blend_components:
-  	/*return (alpha * fg + (255 - alpha) * bg) / 255;*/
+  	/* return (alpha * fg + (255 - alpha) * bg) / 255; */
 	ret
 
 /*
@@ -212,7 +212,7 @@ imgproc_mirror_h:
 	movq %rsp, %rbp
 	subq $8, %rsp
 
-	pushq %r12
+	pushq %r12 /* push registers into stack */
 	pushq %r13
 	pushq %r14
 	pushq %rbx
@@ -253,15 +253,15 @@ imgproc_mirror_h:
 		/* Store pixel in output_img->data[index] */
 		movl %r14d, (%rbp, %r13, 4)
 
-		incl %r9d
+		incl %r9d /* c++ in for loop */
 		jmp .LcolLoopH
 
 	.LcolLoopHEnd:
-		incl %r8d
+		incl %r8d /* r++ in for loop */
 		jmp .LrowLoopH
 	
 	.LrowLoopHEnd:
-		popq %rbp
+		popq %rbp /* pop registers from stack */
 		popq %rbx
 		popq %r14
 		popq %r13
@@ -288,7 +288,7 @@ imgproc_mirror_v:
 	movq %rsp, %rbp
 	subq $8, %rsp
 
-	pushq %r12
+	pushq %r12 /* push registers into stack */
 	pushq %r13
 	pushq %r14
 	pushq %rbx
@@ -329,15 +329,15 @@ imgproc_mirror_v:
 		/* Store pixel in output_img->data[index] */
 		movl %r14d, (%rbp, %r13, 4)
 
-		incl %r9d
+		incl %r9d /* c++ in for loop */
 		jmp .LcolLoopV
 
 	.LcolLoopVEnd:
-		incl %r8d
+		incl %r8d /* r++ in for loop */
 		jmp .LrowLoopV
 	
 	.LrowLoopVEnd:
-		popq %rbp
+		popq %rbp /* pop registers from stack */
 		popq %rbx
 		popq %r14
 		popq %r13
@@ -398,7 +398,7 @@ imgproc_grayscale:
 	movq %rsp, %rbp
 	subq $8, %rsp
 
-	pushq %rbx
+	pushq %rbx /* push registers into stack */
 	pushq %rbp
 	pushq %r12
 	pushq %r13
@@ -429,11 +429,11 @@ imgproc_grayscale:
 		movl %eax, %r14d /* moving the greyscale pixel value into %r12 (original color pixel is lost) */
 		movl %r14d, (%rbp, %r13, 4)
 
-		incl %r13d
+		incl %r13d /* counter for loop iterations; counter++ here */
 		jmp .LpixelLoop
 	
 	.LpixelLoopEnd:
-		popq %r15
+		popq %r15 /* pop registers from stack */
 		popq %r14
 		popq %r13
 		popq %r12
