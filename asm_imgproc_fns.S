@@ -43,7 +43,6 @@ determine_tile_h:
  * uint32_t get_r( uint32_t pixel );
  *
  * Returns the red component of a pixel.
- * This transformation always succeeds.
  *
  * Parameters:
  *   %edi - pointer to the pixel
@@ -53,64 +52,89 @@ get_r:
 	/* ABI complient stack frame */
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $8, %rsp
+	subq $0, %rsp
 
 	movl %edi, %eax /* move parameter into return value */
 	shrl $24, %eax /* shift right by 24 */
 	and $0xFF, %eax /* bitwise and with 0xFF */
 
 	/* ABI complient stack frame */
-	addq $8, %rsp
+	addq $0, %rsp
 	popq %rbp
 
 	ret
 
+/*
+ * uint32_t get_g( uint32_t pixel );
+ *
+ * Returns the green component of a pixel value
+ *
+ * Parameters:
+ *   %edi - pixel value
+ */
 	.globl get_g
 get_g:
 	/* ABI complient stack frame */
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $8, %rsp
+	subq $0, %rsp
 
 	movl %edi, %eax /* move parameter into return value */
 	shrl $16, %eax /* shift right by 16 */
 	and $0xFF, %eax /* bitwise and with 0xFF */
 
 	/* ABI complient stack frame */
-	addq $8, %rsp
+	addq $0, %rsp
 	popq %rbp
 
 	ret
 
 	.globl get_b
+
+/*
+ * uint32_t get_b( uint32_t pixel );
+ *
+ * Returns the blue component of a pixel value
+ *
+ * Parameters:
+ *   %edi - pixel value
+ */
 get_b:
 	/* ABI complient stack frame */
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $8, %rsp
+	subq $0, %rsp
 
 	movl %edi, %eax /* move parameter into return value */
 	shrl $8, %eax /* shift right by 8 */
 	and $0xFF, %eax /* bitwise and with 0xFF */
 
 	/* ABI complient stack frame */
-	addq $8, %rsp
+	addq $0, %rsp
 	popq %rbp
 
 	ret
 
+/*
+ * uint32_t get_a( uint32_t pixel );
+ *
+ * Returns the alpha component of a pixel value
+ *
+ * Parameters:
+ *   %edi - pixel value
+ */
 	.globl get_a
 get_a:
 	/* ABI complient stack frame */
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $8, %rsp
+	subq $0, %rsp
 
 	movl %edi, %eax /* move parameter into return value */
 	and $0xFF, %eax /* bitwise and with 0xFF */
 
 	/* ABI complient stack frame */
-	addq $8, %rsp
+	addq $0, %rsp
 	popq %rbp
 
 	ret
@@ -132,7 +156,7 @@ make_pixel:
 	/* ABI complient stack frame */
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $8, %rsp
+	subq $0, %rsp
 
 	shll $24, %edi /* shift red left by 24 */
 	shll $16, %esi /* shift green left by 16 */
@@ -144,7 +168,7 @@ make_pixel:
 	movl %ecx, %eax /* move that final result to the return value */
 
 	/* ABI complient stack frame */
-	addq $8, %rsp
+	addq $0, %rsp
 	popq %rbp
 
 	ret
@@ -154,6 +178,13 @@ make_pixel:
  *
  * Returns the a new pixel based on the 4 components.
  * This transformation always succeeds.
+ *
+ * Register use:
+ *	%ebx - pixel red value
+ *	%r12 - pixel green value
+ *	%r13 - pixel blue value
+ *	%r14 - pixel alpha value
+ *	%r15 - greyscale color pixel value calculation result
  *
  * Parameters:
  *   %edi - pixel value
@@ -261,6 +292,17 @@ blend_colors:
  * Transform image by mirroring its pixels horizontally.
  * This transformation always succeeds.
  *
+ * Register use:
+ *	%rbx - pointer to source data array
+ *	%r8 - row loop counter (r)
+ *	%r9 - column loop counter (c)
+ *	%r10 - input image width
+ *	%r11 - input image height
+ *	%r12 - input image pixel index
+ *	%r13 - output image pixel index
+ *	%r14 - pixel value
+ *	%r15 - pointer to output data array
+ *
  * Parameters:
  *   %rdi - pointer to original struct Image
  *   %rsi - pointer to output struct Image
@@ -338,6 +380,17 @@ imgproc_mirror_h:
  * Transform image by mirroring its pixels vertically.
  * This transformation always succeeds.
  *
+ * Register use:
+ *	%rbx - pointer to source data array
+ *	%r8 - row loop counter (r)
+ *	%r9 - column loop counter (c)
+ *	%r10 - input image width
+ *	%r11 - input image height
+ *	%r12 - input image pixel index
+ *	%r13 - output image pixel index
+ *	%r14 - pixel value
+ *	%r15 - pointer to output data array
+ *
  * Parameters:
  *   %rdi - pointer to original struct Image
  *   %rsi - pointer to output struct Image
@@ -358,7 +411,7 @@ imgproc_mirror_v:
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r10d /* move source image width to %r10d */
 	movl IMAGE_HEIGHT_OFFSET(%rdi), %r11d /* move source image height to %r11d */
 	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rbx */
-	movq IMAGE_DATA_OFFSET(%rsi), %r15 /* move pointer to output source data array to %14 */
+	movq IMAGE_DATA_OFFSET(%rsi), %r15 /* move pointer to output source data array to %r15 */
 
 	movl $0, %r8d /* initializing my outer loop counter to 0 (r)*/
 
@@ -438,19 +491,16 @@ imgproc_tile:
  * Transform image by converting each pixel to grayscale.
  * This transformation always succeeds.
  *
+ * Register use:
+ *	%rbx - pointer to source data array
+ *	%r12 - pixel loop uper bound
+ *	%r13 - loop counter (ie. current pixel index)
+ *	%r14 - pixel value
+ *	%r15 - pointer to output data array
+ *
  * Parameters:
  *   %rdi - pointer to original struct Image
  *   %rsi - pointer to output struct Image
- */
-
- /*
- for (int r = 0; r < input_img->height; r++){
-    for (int c = 0; c < input_img->width; c++) {
-      int index = (r * input_img->width) + c;
-      uint32_t pixel = input_img->data[index];
-      output_img->data[index] = to_grayscale(pixel);
-    }
-  }
  */
 	.globl imgproc_grayscale
 imgproc_grayscale:
@@ -465,8 +515,8 @@ imgproc_grayscale:
 	pushq %r14
 	pushq %r15
 	
-	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rdx */
-	movq IMAGE_DATA_OFFSET(%rsi), %r15 /* move pointer to output source data array to %14 */
+	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rbx */
+	movq IMAGE_DATA_OFFSET(%rsi), %r15 /* move pointer to output source data array to %r15 */
 
 	/* calculating loop upperbound */
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r12d /* move source image width to %r10d */
