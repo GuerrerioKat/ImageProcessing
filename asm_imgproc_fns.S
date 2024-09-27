@@ -50,29 +50,69 @@ determine_tile_h:
  */
 	.globl get_r
 get_r:
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
 	movl %edi, %eax /* move parameter into return value */
 	shrl $24, %eax /* shift right by 24 */
 	and $0xFF, %eax /* bitwise and with 0xFF */
+
+	/* ABI complient stack frame */
+	addq $8, %rsp
+	popq %rbp
+
 	ret
 
 	.globl get_g
 get_g:
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
 	movl %edi, %eax /* move parameter into return value */
 	shrl $16, %eax /* shift right by 16 */
 	and $0xFF, %eax /* bitwise and with 0xFF */
+
+	/* ABI complient stack frame */
+	addq $8, %rsp
+	popq %rbp
+
 	ret
 
 	.globl get_b
 get_b:
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
 	movl %edi, %eax /* move parameter into return value */
 	shrl $8, %eax /* shift right by 8 */
 	and $0xFF, %eax /* bitwise and with 0xFF */
+
+	/* ABI complient stack frame */
+	addq $8, %rsp
+	popq %rbp
+
 	ret
 
 	.globl get_a
 get_a:
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
 	movl %edi, %eax /* move parameter into return value */
 	and $0xFF, %eax /* bitwise and with 0xFF */
+
+	/* ABI complient stack frame */
+	addq $8, %rsp
+	popq %rbp
+
 	ret
 
 /*
@@ -89,6 +129,11 @@ get_a:
  */
 	.globl make_pixel
 make_pixel:
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
 	shll $24, %edi /* shift red left by 24 */
 	shll $16, %esi /* shift green left by 16 */
 	shll $8, %edx /* shift blue left by 8 */
@@ -97,6 +142,11 @@ make_pixel:
 	or %esi, %edx
 	or %edx, %ecx
 	movl %ecx, %eax /* move that final result to the return value */
+
+	/* ABI complient stack frame */
+	addq $8, %rsp
+	popq %rbp
+
 	ret
 
 /*
@@ -110,11 +160,17 @@ make_pixel:
  */
 	.globl to_grayscale
 to_grayscale:
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
 	pushq %r12 /* push these registers to stack */
 	pushq %r13
 	pushq %r14
 	pushq %r15
 	pushq %rbx
+	/* effectivly subtracts 40 from %rsp */
 
 	call get_r /* call each get rgba function for calculations */
 	movl %eax, %ebx /* move value from call onto registers */
@@ -152,6 +208,10 @@ to_grayscale:
 	popq %r14
 	popq %r13
 	popq %r12
+
+	/* ABI complient stack frame */
+	addq $8, %rsp
+	popq %rbp
 
 	ret
 
@@ -208,20 +268,21 @@ blend_colors:
 	.globl imgproc_mirror_h
 imgproc_mirror_h:	
 	/* ABI complient stackframe, meaningful stack trace in gdb */
-	pushq %rbp
-	movq %rsp, %rbp
-	subq $8, %rsp
+	pushq %rbp /* rbp must point to location just below return address */
+	movq %rsp, %rbp /* creates area in stackframe for local variable storage, only if you're accessing memory in the stack frame */
+	subq $8, %rsp /* creating block of 8 bits that rbp points to direclty above (ie. pointer to what is just beyond the end of an arry -> indexing is backwards) */
 
 	pushq %r12 /* push registers into stack */
 	pushq %r13
 	pushq %r14
 	pushq %rbx
-	pushq %rbp
+	pushq %r15
+	
 	
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r10d /* move source image width to %r10d */
 	movl IMAGE_HEIGHT_OFFSET(%rdi), %r11d /* move source image height to %r11d */
 	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rbx */
-	movq IMAGE_DATA_OFFSET(%rsi), %rbp /* move pointer to output source data array to %14 */
+	movq IMAGE_DATA_OFFSET(%rsi), %r15 /* move pointer to output source data array to %14 */
 
 	movl $0, %r8d /* initializing my outer loop counter to 0 (r)*/
 
@@ -251,7 +312,7 @@ imgproc_mirror_h:
 		decl %r13d /* (r * width) + width - c - 1 */
 
 		/* Store pixel in output_img->data[index] */
-		movl %r14d, (%rbp, %r13, 4)
+		movl %r14d, (%r15, %r13, 4)
 
 		incl %r9d /* c++ in for loop */
 		jmp .LcolLoopH
@@ -261,7 +322,7 @@ imgproc_mirror_h:
 		jmp .LrowLoopH
 	
 	.LrowLoopHEnd:
-		popq %rbp /* pop registers from stack */
+		popq %r15 /* pop registers from stack */
 		popq %rbx
 		popq %r14
 		popq %r13
@@ -292,12 +353,12 @@ imgproc_mirror_v:
 	pushq %r13
 	pushq %r14
 	pushq %rbx
-	pushq %rbp
+	pushq %r15
 	
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r10d /* move source image width to %r10d */
 	movl IMAGE_HEIGHT_OFFSET(%rdi), %r11d /* move source image height to %r11d */
 	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rbx */
-	movq IMAGE_DATA_OFFSET(%rsi), %rbp /* move pointer to output source data array to %14 */
+	movq IMAGE_DATA_OFFSET(%rsi), %r15 /* move pointer to output source data array to %14 */
 
 	movl $0, %r8d /* initializing my outer loop counter to 0 (r)*/
 
@@ -327,7 +388,7 @@ imgproc_mirror_v:
 		addl %r9d, %r13d /* ((height - 1 - r) * width) + c */
 
 		/* Store pixel in output_img->data[index] */
-		movl %r14d, (%rbp, %r13, 4)
+		movl %r14d, (%r15, %r13, 4)
 
 		incl %r9d /* c++ in for loop */
 		jmp .LcolLoopV
@@ -337,7 +398,7 @@ imgproc_mirror_v:
 		jmp .LrowLoopV
 	
 	.LrowLoopVEnd:
-		popq %rbp /* pop registers from stack */
+		popq %r15 /* pop registers from stack */
 		popq %rbx
 		popq %r14
 		popq %r13
@@ -399,14 +460,13 @@ imgproc_grayscale:
 	subq $8, %rsp
 
 	pushq %rbx /* push registers into stack */
-	pushq %rbp
 	pushq %r12
 	pushq %r13
 	pushq %r14
 	pushq %r15
 	
 	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to source data array to %rdx */
-	movq IMAGE_DATA_OFFSET(%rsi), %rbp /* move pointer to output source data array to %14 */
+	movq IMAGE_DATA_OFFSET(%rsi), %r15 /* move pointer to output source data array to %14 */
 
 	/* calculating loop upperbound */
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r12d /* move source image width to %r10d */
@@ -416,7 +476,7 @@ imgproc_grayscale:
 
 	.LpixelLoop:
 		cmpl %r12d, %r13d /* r13 >= r12d */
-		jge .LpixelLoopEnd
+		jge .LpixelLoopEnd /* if true, end pixel loop */
 		
 		/* Load pixel value from input_img->data[index] */
 		movl (%rbx, %r13, 4), %r14d /* %rbx + (%r13 * 4) */
@@ -427,7 +487,7 @@ imgproc_grayscale:
 
 		/* Store pixel in output_img->data[index] */
 		movl %eax, %r14d /* moving the greyscale pixel value into %r12 (original color pixel is lost) */
-		movl %r14d, (%rbp, %r13, 4)
+		movl %r14d, (%r15, %r13, 4)
 
 		incl %r13d /* counter for loop iterations; counter++ here */
 		jmp .LpixelLoop
@@ -437,7 +497,6 @@ imgproc_grayscale:
 		popq %r14
 		popq %r13
 		popq %r12
-		popq %rbp
 		popq %rbx
 
 		addq $8, %rsp

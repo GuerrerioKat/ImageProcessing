@@ -28,3 +28,28 @@ Angela:
 - blend_components
 - blend_color
 - most helper test cases
+
+Milestone 2--------------------------------------------------------
+We used VSCode Live Share to work on almost all functions together.
+
+Katherine:
+- imgproc_mirror_h
+- imgproc_mirror_v
+- imgproc_grayscale
+- get_r
+- get_g
+- get_b
+- get_a
+- make_pixel
+- to_grayscale
+
+Angela:
+- imgproc_mirror_h
+- imgproc_mirror_v
+- imgproc_grayscale
+- get_r
+- get_g
+- get_b
+- get_a
+- make_pixel
+- to_grayscale
