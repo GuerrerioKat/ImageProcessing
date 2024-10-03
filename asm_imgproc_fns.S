@@ -105,7 +105,7 @@ determine_tile_w:
 determine_tile_x_offset:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $0, %rsp
+	subq $8, %rsp
 
 	pushq %r12
 	pushq %r13
@@ -142,7 +142,7 @@ determine_tile_x_offset:
 		popq %r13
 		popq %r12
 
-		addq $0, %rsp
+		addq $8, %rsp
 		popq %rbp
 	ret
 
@@ -192,7 +192,7 @@ determine_tile_h:
  determine_tile_y_offset:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $0, %rsp
+	subq $8, %rsp
 
 	pushq %r12
 	pushq %r13
@@ -229,7 +229,7 @@ determine_tile_h:
 		popq %r13
 		popq %r12
 
-		addq $0, %rsp
+		addq $8, %rsp
 		popq %rbp
 	ret
 
@@ -245,7 +245,7 @@ determine_tile_h:
  copy_tile:
 	pushq %rbp
     movq %rsp, %rbp
-    subq $32, %rsp
+    subq $40, %rsp
 
     pushq %rbx
     pushq %r12
@@ -257,8 +257,8 @@ determine_tile_h:
     movl %ecx, %r13d  //tile_col
     movl %r8d, %r14d  //n
 
-    movq IMAGE_DATA_OFFSET(%rdi), %r15 /* move pointer to source data array to %rbx */
-    movq IMAGE_DATA_OFFSET(%rsi), %rbx
+    movq IMAGE_DATA_OFFSET(%rdi), %r15 /* move pointer to output image data array to %r15 */
+    movq IMAGE_DATA_OFFSET(%rsi), %rbx /* move pointer to source image data array to %rbx */
 
     movl IMAGE_WIDTH_OFFSET(%rsi), %r8d
     movl %r8d, -4(%rbp) /* move source image width to %r11d */
@@ -294,7 +294,7 @@ determine_tile_h:
     //GETTING Y_OFFSET
     movl -8(%rbp), %edi /* move source image width to %edi */
     movl %r14d, %esi
-    movl %r13d, %edx
+    movl %r12d, %edx
     call determine_tile_y_offset
     movl %eax, -24(%rbp) /* storign tile y offset */
 
@@ -322,7 +322,7 @@ determine_tile_h:
         addl %edi, %edx
 
         /* Getting pixel value */
-        movl (%r15d, %edx, 4), %eax
+        movl (%rbx, %rdx, 4), %eax
         movl %eax, -28(%rbp)
 
         /* Getting output c and r */
@@ -336,18 +336,16 @@ determine_tile_h:
 
         /* getting output index and storing it in -32(%rbp) */
         movl -40(%rbp), %eax
-        imull %eax, -36(%rbp)
-        movl -36(%rbp), %eax
+        imull -36(%rbp), %eax
         addl %eax, -32(%rbp)
 
         /* Store pixel in output_img->data[index] */
-        movl %ebx, %eax
-        movl -32(%rbp), %ebx
-        movl %eax, (%r15, %ebx, 4)
-        movl %eax, %ebx
+		movl -32(%rbp), %eax
+		movl -28(%rbp), %esi
+        movl %esi, (%r15, %rax, 4)
 
         incl %r9d /* c++ in for loop */
-        jmp .LcolLoopH
+        jmp .LcolLoopTileCP
 
     .LcolLoopTileCPEnd:
         incl %r8d /* r++ in for loop */
@@ -355,12 +353,12 @@ determine_tile_h:
     
     .LrowLoopTileCPEnd:
         popq %r15 /* pop registers from stack */
-        popq %rbx
         popq %r14
         popq %r13
         popq %r12
+		popq %rbx
 
-        addq $8, %rsp
+        addq $40, %rsp
         popq %rbp
 
 
@@ -683,10 +681,10 @@ blend_colors:
 	movl -20(%rbp), %edx
 	movl $255, %ecx
 	call make_pixel
-
-	popq %r12
-	popq %r13
+	
 	popq %r14
+	popq %r13
+	popq %r12
 	
 	addq $24, %rsp
 	popq %rbp
@@ -892,8 +890,71 @@ imgproc_mirror_v:
  */
 	.globl imgproc_tile
 imgproc_tile:
-	/* TODO: implement (this stub implementation just returns 0) */
-	xorl %eax, %eax
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
+	pushq %rbx /* push registers into stack */
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+
+	movl %esi, %ebx /* holding our value for n */
+	movq %rdi, %r12 /* holding input image pointer */
+	movq %rdx, %r13 /* holding output image pointer */
+
+	movl IMAGE_WIDTH_OFFSET(%r13), %edi
+	movl IMAGE_HEIGHT_OFFSET(%r13), %esi
+	movl %ebx, %edx
+	call all_tiles_nonempty
+	
+	cmpl $1, %eax
+	jne .LrowLoopTileFailEnd
+
+	movl $0, %r14d /* initializing my outer loop counter to 0 (r)*/
+
+	.LrowLoopTile:
+		cmpl %ebx, %r14d /* r >= input height */
+		jge .LrowLoopTileEnd /* if true, end row loop */
+
+		movl $0, %r15d /* initializing my inner loop counter to 0 (c) */
+
+	.LcolLoopTile:
+		cmpl %ebx, %r15d /* c >= input width */
+		jge .LcolLoopTileEnd /* if true, end column loop */
+
+		movq %r13, %rdi
+		movq %r12, %rsi
+		movl %r14d, %edx
+		movl %r15d, %ecx
+		movl %ebx, %r8d
+
+		call copy_tile
+		
+		incl %r15d /* c++ in for loop */
+		jmp .LcolLoopTile
+
+	.LcolLoopTileEnd:
+		incl %r14d /* r++ in for loop */
+		jmp .LrowLoopTile
+	
+	.LrowLoopTileFailEnd:
+		movl $0, %eax
+		jmp .LreturnTile
+
+	.LrowLoopTileEnd:
+		movl $1, %eax
+	
+	.LreturnTile:
+		popq %r15 /* pop registers from stack */
+		popq %r14
+		popq %r13
+		popq %r12
+		popq %rbx
+
+		addq $8, %rsp
+		popq %rbp
 	ret
 
 /*
@@ -1003,8 +1064,8 @@ imgproc_composite:
 	cmpl IMAGE_WIDTH_OFFSET(%rdi), %r11d
 	jne .LcompositeFails
 	
-	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to forground data array to %rbx */
-	movq IMAGE_DATA_OFFSET(%rsi), %r14 /* move pointer to background data array to %r14 */
+	movq IMAGE_DATA_OFFSET(%rsi), %rbx /* move pointer to forground data array to %rbx */
+	movq IMAGE_DATA_OFFSET(%rdi), %r14 /* move pointer to background data array to %r14 */
 	movq IMAGE_DATA_OFFSET(%rdx), %r15 /* move pointer to output source data array to %r15 */
 
 	/* calculating loop upperbound */

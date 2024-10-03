@@ -29,27 +29,22 @@ Angela:
 - blend_color
 - most helper test cases
 
-Milestone 2--------------------------------------------------------
+Milestone 3--------------------------------------------------------
 We used VSCode Live Share to work on almost all functions together.
 
 Katherine:
-- imgproc_mirror_h
-- imgproc_mirror_v
-- imgproc_grayscale
-- get_r
-- get_g
-- get_b
-- get_a
-- make_pixel
-- to_grayscale
+- blend_color
+- blend_components
+- determine_tile_w
+- determine_tile_x_offset
+- copy_tile
+- imgproc_composite
+- imgproc_tile
 
 Angela:
-- imgproc_mirror_h
-- imgproc_mirror_v
-- imgproc_grayscale
-- get_r
-- get_g
-- get_b
-- get_a
-- make_pixel
-- to_grayscale
+- all_tiles_nonempty
+- determine_tile_w
+- determine_tile_h
+- determine_tile_x_offset
+- determine_tile_y_offset
+- copy_tile
