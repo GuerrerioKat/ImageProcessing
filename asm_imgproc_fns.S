@@ -15,28 +15,355 @@
  * them visible to the test code.
  */
 
+ /*
+ * uint32_t all_tiles_nonempty( uint32_t width, uint32_t height, int32_t n );
+ *
+ * Checks if any of the tiles would be empty based on the tiling factor.
+ * Returns 1 if true, 0 if false.
+ *
+ * Parameters:
+ *   %edi - width value
+ *   %esi - height value
+ *   %edx - n value
+ */
 	.globl all_tiles_nonempty
 all_tiles_nonempty:
-	ret
+	pushq %rbp
+	movq %rsp, %rbp
+
+	movl %edx, %r10d
+	
+	cmpl $1, %r10d /* n < 1 */
+	jl .LendF
+	
+	movl %esi, %eax
+	movl $0, %edx
+	divl %r10d
+	cmpl $1, %eax /* (height/n) < 1 */
+	jl .LendF
+
+	movl %edi, %eax
+	movl $0, %edx
+	divl %r10d
+	cmpl $1, %eax /* (width/n) < 1 */
+	jl .LendF
+
+	.LendT:
+		movl $1, %eax
+		popq %rbp
+		ret
+
+	.LendF:
+		movl $0, %eax
+		popq %rbp
+		ret
 
 	.globl determine_tile_w
-determine_tile_w:
-	ret
 
+ /*
+ * uint32_t get_r( uint32_t pixel );
+ *
+ * Returns the red component of a pixel.
+ *
+ * Parameters:
+ *   %edi - pointer to the pixel
+ */
+determine_tile_w:
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $0, %rsp
+
+	movl %edi, %eax /* move the width into numerator */
+	movl %esi, %r10d /* moving n into %r10 */
+	movl %edx, %r11d /* moving tile_col into %r11 */
+	movl $0, %edx /* high 32 bits, need to manually push 0 in there */
+	divl %r10d /* divide by n and put into %eax */
+	
+	.LcheckRemainderw:
+		cmp %r11d, %edx /* remainder > tile_col */
+		jg .LextraOffsetw
+		jmp .LreturnOffsetw
+
+	.LextraOffsetw:
+		incl %eax
+	
+	.LreturnOffsetw:
+		addq $0, %rsp
+		popq %rbp
+		ret
+
+ /*
+ * uint32_t get_r( uint32_t pixel );
+ *
+ * Returns the red component of a pixel.
+ *
+ * Parameters:
+ *   %edi - pointer to the pixel
+ */
  	.globl determine_tile_x_offset
 determine_tile_x_offset:
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $0, %rsp
+
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+	pushq %rbx
+	
+	movl $0, %r14d /* make %r14d the offset tracker */
+	movl $0, %r15d /* make %r15d the i (counter) tracker */
+	
+	movl %edi, %r12d /* width */
+	movl %esi, %r13d /* n */
+	movl %edx, %ebx /* tile_col */
+
+	.Lloopx:
+		cmpl %ebx, %r15d /* i >= tile_col */
+		jge .LendLoopx
+		
+		movl %r12d, %edi
+		movl %r13d, %esi
+		movl %r15d, %edx
+		call determine_tile_w
+		addl %eax, %r14d
+		
+		incl %r15d
+		jmp .Lloopx
+
+	.LendLoopx:
+		movl %r14d, %eax
+
+		popq %rbx
+		popq %r15
+		popq %r14
+		popq %r13
+		popq %r12
+
+		addq $0, %rsp
+		popq %rbp
 	ret
 
+ /*
+ * uint32_t get_r( uint32_t pixel );
+ *
+ * Returns the red component of a pixel.
+ *
+ * Parameters:
+ *   %edi - pointer to the pixel
+ */
  	.globl determine_tile_h
 determine_tile_h:
-	ret
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $0, %rsp
 
+	movl %edi, %eax /* move the height into numerator */
+	movl %esi, %r10d /* moving n into %r10 */
+	movl %edx, %r11d /* moving tile_col into %r11 */
+	movl $0, %edx /* high 32 bits, need to manually push 0 in there */
+	divl %r10d /* divide by n and put into %eax */
+	
+	.LcheckRemainderh:
+		cmp %r11d, %edx /* remainder > tile_row */
+		jg .LextraOffseth
+		jmp .LreturnOffseth
+
+	.LextraOffseth:
+		incl %eax
+	
+	.LreturnOffseth:
+		addq $0, %rsp
+		popq %rbp
+		ret
+
+ /*
+ * uint32_t get_r( uint32_t pixel );
+ *
+ * Returns the red component of a pixel.
+ *
+ * Parameters:
+ *   %edi - pointer to the pixel
+ */
  	.globl determine_tile_y_offset
  determine_tile_y_offset:
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $0, %rsp
+
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+	pushq %rbx
+	
+	movl $0, %r14d /* make %r14d the offset tracker */
+	movl $0, %r15d /* make %r15d the i (counter) tracker */
+	
+	movl %edi, %r12d /* height */
+	movl %esi, %r13d /* n */
+	movl %edx, %ebx /* tile_row */
+
+	.Lloopy:
+		cmpl %ebx, %r15d /* i >= tile_row */
+		jge .LendLoopx
+		
+		movl %r12d, %edi
+		movl %r13d, %esi
+		movl %r15d, %edx
+		call determine_tile_w
+		addl %eax, %r14d
+		
+		incl %r15d
+		jmp .Lloopx
+
+	.LendLoopy:
+		movl %r14d, %eax
+
+		popq %rbx
+		popq %r15
+		popq %r14
+		popq %r13
+		popq %r12
+
+		addq $0, %rsp
+		popq %rbp
 	ret
 
+ /*
+ * uint32_t get_r( uint32_t pixel );
+ *
+ * Returns the red component of a pixel.
+ *
+ * Parameters:
+ *   %edi - pointer to the pixel
+ */
  	.globl copy_tile
  copy_tile:
+	pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp
+
+    pushq %rbx
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+
+    movl %edx, %r12d  //tile_row
+    movl %ecx, %r13d  //tile_col
+    movl %r8d, %r14d  //n
+
+    movq IMAGE_DATA_OFFSET(%rdi), %r15 /* move pointer to source data array to %rbx */
+    movq IMAGE_DATA_OFFSET(%rsi), %rbx
+
+    movl IMAGE_WIDTH_OFFSET(%rsi), %r8d
+    movl %r8d, -4(%rbp) /* move source image width to %r11d */
+    movl IMAGE_HEIGHT_OFFSET(%rsi), %r8d
+    movl %r8d, -8(%rbp) /* move source image height to %r11d */
+
+    movl IMAGE_WIDTH_OFFSET(%rdi), %r8d
+    movl %r8d, -40(%rbp) /* move output image width to %r11d */
+    movl IMAGE_HEIGHT_OFFSET(%rdi), %r8d
+    movl %r8d, -44(%rbp) /* move output image height to %r11d */
+
+    //GETTING TILE_W
+    movl -4(%rbp), %edi /* move source image width to %edi */
+    movl %r14d, %esi
+    movl %r13d, %edx
+    call determine_tile_w
+    movl %eax, -12(%rbp) /* storign tile width */
+
+    //GETTING TILE_H
+    movl -8(%rbp), %edi /* move source image width to %edi */
+    movl %r14d, %esi
+    movl %r12d, %edx
+    call determine_tile_h
+    movl %eax, -16(%rbp) /* storign tile height */
+
+    //GETTING X_OFFSET
+    movl -4(%rbp), %edi /* move source image width to %edi */
+    movl %r14d, %esi
+    movl %r13d, %edx
+    call determine_tile_x_offset
+    movl %eax, -20(%rbp) /* storign tile x offset */
+
+    //GETTING Y_OFFSET
+    movl -8(%rbp), %edi /* move source image width to %edi */
+    movl %r14d, %esi
+    movl %r13d, %edx
+    call determine_tile_y_offset
+    movl %eax, -24(%rbp) /* storign tile y offset */
+
+    movl $0, %r8d
+    .LrowLoopTileCP:
+        cmpl -16(%rbp), %r8d /* r >= tile height */
+        jge .LrowLoopTileCPEnd /* if true, end row loop */
+
+        movl $0, %r9d /* initializing my inner loop counter to 0 (c) */
+
+    .LcolLoopTileCP:
+        cmpl -12(%rbp), %r9d /* c >= tile width */
+        jge .LcolLoopTileCPEnd /* if true, end column loop */
+        
+        /* Get column and row for every nth pixel */
+        movl %r14d, %edi
+        imull %r9d, %edi /* holds img_c */
+
+        movl %r14d, %esi
+        imull %r8d, %esi /* holds img_r */
+
+        /* Getting pixel index */
+        movl -4(%rbp), %edx
+        imull %esi, %edx
+        addl %edi, %edx
+
+        /* Getting pixel value */
+        movl (%r15d, %edx, 4), %eax
+        movl %eax, -28(%rbp)
+
+        /* Getting output c and r */
+        movl -20(%rbp), %eax
+        movl %eax, -32(%rbp)
+        addl %r9d, -32(%rbp) //int out_c = x_offset + c;
+
+        movl -24(%rbp), %eax
+        movl %eax, -36(%rbp)
+        addl %r8d, -36(%rbp) // int out_r = y_offset + r;
+
+        /* getting output index and storing it in -32(%rbp) */
+        movl -40(%rbp), %eax
+        imull %eax, -36(%rbp)
+        movl -36(%rbp), %eax
+        addl %eax, -32(%rbp)
+
+        /* Store pixel in output_img->data[index] */
+        movl %ebx, %eax
+        movl -32(%rbp), %ebx
+        movl %eax, (%r15, %ebx, 4)
+        movl %eax, %ebx
+
+        incl %r9d /* c++ in for loop */
+        jmp .LcolLoopH
+
+    .LcolLoopTileCPEnd:
+        incl %r8d /* r++ in for loop */
+        jmp .LrowLoopTileCP
+    
+    .LrowLoopTileCPEnd:
+        popq %r15 /* pop registers from stack */
+        popq %rbx
+        popq %r14
+        popq %r13
+        popq %r12
+
+        addq $8, %rsp
+        popq %rbp
+
+
 	ret
 
  /*
@@ -225,7 +552,7 @@ to_grayscale:
 	movl %r13d, %eax /* move the sum calculated above into return value */
 	movl $256, %r15d /* will be dividing total sum by 256, represented by %r15d */
 	movl $0, %edx /* high 32 bits, need to manually push 0 in there */
-	divl %r15d /* divide by 256 and put into %r15d --> notice it's callee-saved */
+	divl %r15d /* divide by 256 and put into %eax */
 	
 	/*calling the make_pixel function*/
 	movl %eax, %edi /* create the parameters for make_pixel function */
@@ -253,14 +580,30 @@ to_grayscale:
  * This transformation always succeeds.
  *
  * Parameters:
- *   %edi - red pixel value
- *   %esi - green pixel value
- *   %edx - blue pixel value
- *   %ecx - alpha pixel value
+ *   %edi - forground pixel value
+ *   %esi - background pixel value
+ *   %edx - alpha pixel value
  */
 	.globl blend_components
 blend_components:
-  	/* return (alpha * fg + (255 - alpha) * bg) / 255; */
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $0, %rsp
+
+	imull %edx, %edi
+	movl $255, %r11d
+	subl %edx, %r11d
+	imull %r11d, %esi
+	addl %edi, %esi /* esi now holds the numerator */
+	
+	movl %esi, %eax /* move the numerator calculated above into return value */
+	movl $255, %r10d
+	movl $0, %edx /* high 32 bits, need to manually push 0 in there */
+	divl %r10d /* divide by 255 */
+
+	popq %rbp
+
 	ret
 
 /*
@@ -275,11 +618,79 @@ blend_components:
  */
 	.globl blend_colors
 blend_colors:
-	/* uint32_t a = get_a(fg); // get foreground's opacity for overlay
-	uint8_t blend_r = blend_components(get_r(fg), get_r(bg), a);
-	uint8_t blend_g = blend_components(get_g(fg), get_g(bg), a);
-	uint8_t blend_b = blend_components(get_b(fg), get_b(bg), a);
-	return make_pixel(blend_r, blend_g, blend_b, 255); */
+	/* ABI complient stack frame */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $24, %rsp
+
+	pushq %r12 /* push these registers to stack */
+	pushq %r13
+	pushq %r14
+
+	movl %edi, %r12d /* holds fg pixel value */
+	movl %esi, %r13d /* holds bg pixel value */
+
+	call get_a
+	movl %eax, %r14d /* holds alpha value */
+
+	//BLENDING RED COMPONENT VALUES
+	movl %r12d, %edi
+	call get_r
+	movl %eax, -4(%rbp) /* holds fg red value */
+
+	movl %r13d, %edi
+	call get_r
+	movl %eax, -8(%rbp) /* holds bg red value */
+
+	movl -4(%rbp), %edi
+	movl -8(%rbp), %esi
+	movl %r14d, %edx
+	call blend_components
+	movl %eax, -12(%rbp) /* storing local variables of the red component */
+
+	//BLENDING GREEN COMPONENT VALUES
+	movl %r12d, %edi
+	call get_g
+	movl %eax, -4(%rbp) /* holds fg green value */
+
+	movl %r13d, %edi
+	call get_g
+	movl %eax, -8(%rbp) /* holds bg green value */
+
+	movl -4(%rbp), %edi
+	movl -8(%rbp), %esi
+	movl %r14d, %edx
+	call blend_components
+	movl %eax, -16(%rbp) /* storing blended green component */
+
+	//BLENDING BLUE COMPONENT VALUES
+	movl %r12d, %edi
+	call get_b
+	movl %eax, -4(%rbp) /* holds fg green value */
+
+	movl %r13d, %edi
+	call get_b
+	movl %eax, -8(%rbp) /* holds bg green value */
+
+	movl -4(%rbp), %edi
+	movl -8(%rbp), %esi
+	movl %r14d, %edx
+	call blend_components
+	movl %eax, -20(%rbp) /* storing blended blue component */
+
+	movl -12(%rbp), %edi
+	movl -16(%rbp), %esi
+	movl -20(%rbp), %edx
+	movl $255, %ecx
+	call make_pixel
+
+	popq %r12
+	popq %r13
+	popq %r14
+	
+	addq $24, %rsp
+	popq %rbp
+	
 	ret
 
 /*
@@ -555,7 +966,7 @@ imgproc_grayscale:
 	ret
 
 /*
- * int imgproc_composite( struct Image *base_img, struct Image *overlay_img );
+ * imgproc_composite( struct Image *base_img, struct Image *overlay_img, struct Image *output_img )
  *
  * Overlay a foreground image on a background image, using each foreground
  * pixel's alpha value to determine its degree of opacity in order to blend
@@ -572,8 +983,70 @@ imgproc_grayscale:
  */
 	.globl imgproc_composite
 imgproc_composite:
-	/* TODO: implement (this stub implementation just returns 0) */
-	xorl %eax, %eax
+	/* ABI complient stackframe, meaningful stack trace in gdb */
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+
+	pushq %rbx /* push registers into stack */
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+
+	movl IMAGE_HEIGHT_OFFSET(%rsi), %r10d
+	movl IMAGE_WIDTH_OFFSET(%rsi), %r11d
+
+	cmpl IMAGE_HEIGHT_OFFSET(%rdi), %r10d
+	jne .LcompositeFails
+
+	cmpl IMAGE_WIDTH_OFFSET(%rdi), %r11d
+	jne .LcompositeFails
+	
+	movq IMAGE_DATA_OFFSET(%rdi), %rbx /* move pointer to forground data array to %rbx */
+	movq IMAGE_DATA_OFFSET(%rsi), %r14 /* move pointer to background data array to %r14 */
+	movq IMAGE_DATA_OFFSET(%rdx), %r15 /* move pointer to output source data array to %r15 */
+
+	/* calculating loop upperbound */
+	movl IMAGE_WIDTH_OFFSET(%rdi), %r12d /* move source image width to %r10d */
+	imull IMAGE_HEIGHT_OFFSET(%rdi), %r12d /* multiply source image height by width to get total number of pixels */
+
+	movl $0, %r13d /* initializing my loop counter to 0 --> this is also my index value */
+
+	.LcompositeLoop:
+		cmpl %r12d, %r13d /* r13 >= r12d */
+		jge .LcompositeLoopEnd /* if true, end pixel loop */
+		
+		/* Load pixel values */
+		movl (%rbx, %r13, 4), %edi /* forground pixel value */
+		movl (%r14, %r13, 4), %esi /* background pixel value */
+
+		/* blending the pixel values together */
+		call blend_colors
+
+		/* Store pixel in output_img->data[index] */
+		movl %eax, (%r15, %r13, 4)
+
+		incl %r13d /* counter for loop iterations; counter++ here */
+		jmp .LcompositeLoop
+	
+	.LcompositeLoopEnd:
+		movl $1, %eax
+		jmp .LreturnCode
+
+	.LcompositeFails:
+		movl $0, %eax
+
+	.LreturnCode:
+		popq %r15 /* pop registers from stack */
+		popq %r14
+		popq %r13
+		popq %r12
+		popq %rbx
+
+		addq $8, %rsp
+		popq %rbp
+	
 	ret
 
 /*
