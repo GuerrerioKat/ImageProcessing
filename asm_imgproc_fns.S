@@ -257,9 +257,9 @@ determine_tile_h:
     pushq %r14
     pushq %r15
 
-    movl %edx, %r12d  //tile_row
-    movl %ecx, %r13d  //tile_col
-    movl %r8d, %r14d  //n
+    movl %edx, %r12d  /* tile_row */
+    movl %ecx, %r13d  /* tile_col */
+    movl %r8d, %r14d  /* n */
 
     movq IMAGE_DATA_OFFSET(%rdi), %r15 /* move pointer to output image data array to %r15 */
     movq IMAGE_DATA_OFFSET(%rsi), %rbx /* move pointer to source image data array to %rbx */
@@ -322,8 +322,8 @@ determine_tile_h:
 
         /* Getting pixel index */
         movl -4(%rbp), %edx
-        imull %esi, %edx
-        addl %edi, %edx
+        imull %esi, %edx /* img_r * img->width */
+        addl %edi, %edx /* + img_c */
 
         /* Getting pixel value */
         movl (%rbx, %rdx, 4), %eax
@@ -364,7 +364,6 @@ determine_tile_h:
 
         addq $40, %rsp
         popq %rbp
-
 
 	ret
 
@@ -593,11 +592,11 @@ blend_components:
 	movq %rsp, %rbp
 	subq $0, %rsp
 
-	imull %edx, %edi
+	imull %edx, %edi /* alpha * fg */
 	movl $255, %r11d
-	subl %edx, %r11d
-	imull %r11d, %esi
-	addl %edi, %esi /* esi now holds the numerator */
+	subl %edx, %r11d /* 255 - alpha */
+	imull %r11d, %esi /* (255 - alpha) * bg */
+	addl %edi, %esi /* add them all up, esi now holds the numerator */
 	
 	movl %esi, %eax /* move the numerator calculated above into return value */
 	movl $255, %r10d
@@ -605,7 +604,6 @@ blend_components:
 	divl %r10d /* divide by 255 */
 
 	popq %rbp
-
 	ret
 
 /*
@@ -646,7 +644,7 @@ blend_colors:
 
 	movl -4(%rbp), %edi
 	movl -8(%rbp), %esi
-	movl %r14d, %edx
+	movl %r14d, %edx /* a */
 	call blend_components
 	movl %eax, -12(%rbp) /* storing local variables of the red component */
 
@@ -661,7 +659,7 @@ blend_colors:
 
 	movl -4(%rbp), %edi
 	movl -8(%rbp), %esi
-	movl %r14d, %edx
+	movl %r14d, %edx /* a */
 	call blend_components
 	movl %eax, -16(%rbp) /* storing blended green component */
 
@@ -676,7 +674,7 @@ blend_colors:
 
 	movl -4(%rbp), %edi
 	movl -8(%rbp), %esi
-	movl %r14d, %edx
+	movl %r14d, %edx /* a */
 	call blend_components
 	movl %eax, -20(%rbp) /* storing blended blue component */
 
@@ -686,7 +684,7 @@ blend_colors:
 	movl $255, %ecx
 	call make_pixel
 	
-	popq %r14
+	popq %r14 /* pop registers */
 	popq %r13
 	popq %r12
 	
@@ -732,7 +730,6 @@ imgproc_mirror_h:
 	pushq %r14
 	pushq %rbx
 	pushq %r15
-	
 	
 	movl IMAGE_WIDTH_OFFSET(%rdi), %r10d /* move source image width to %r10d */
 	movl IMAGE_HEIGHT_OFFSET(%rdi), %r11d /* move source image height to %r11d */
@@ -894,6 +891,7 @@ imgproc_mirror_v:
  */
 	.globl imgproc_tile
 imgproc_tile:
+	/* ABI complient stackframe */
 	pushq %rbp
 	movq %rsp, %rbp
 	subq $8, %rsp
@@ -908,8 +906,8 @@ imgproc_tile:
 	movq %rdi, %r12 /* holding input image pointer */
 	movq %rdx, %r13 /* holding output image pointer */
 
-	movl IMAGE_WIDTH_OFFSET(%r13), %edi
-	movl IMAGE_HEIGHT_OFFSET(%r13), %esi
+	movl IMAGE_WIDTH_OFFSET(%r13), %edi /* move source image width to %edi */
+	movl IMAGE_HEIGHT_OFFSET(%r13), %esi /* move source image height to %esi */
 	movl %ebx, %edx
 	call all_tiles_nonempty
 	
@@ -933,8 +931,7 @@ imgproc_tile:
 		movl %r14d, %edx
 		movl %r15d, %ecx
 		movl %ebx, %r8d
-
-		call copy_tile
+		call copy_tile /* use above registers to call copy_tile */
 		
 		incl %r15d /* c++ in for loop */
 		jmp .LcolLoopTile
@@ -944,11 +941,11 @@ imgproc_tile:
 		jmp .LrowLoopTile
 	
 	.LrowLoopTileFailEnd:
-		movl $0, %eax
+		movl $0, %eax /* return 0 */
 		jmp .LreturnTile
 
 	.LrowLoopTileEnd:
-		movl $1, %eax
+		movl $1, %eax /* return 1 */
 	
 	.LreturnTile:
 		popq %r15 /* pop registers from stack */
@@ -1059,13 +1056,13 @@ imgproc_composite:
 	pushq %r14
 	pushq %r15
 
-	movl IMAGE_HEIGHT_OFFSET(%rsi), %r10d
-	movl IMAGE_WIDTH_OFFSET(%rsi), %r11d
+	movl IMAGE_HEIGHT_OFFSET(%rsi), %r10d /* move source image height to %r10d */
+	movl IMAGE_WIDTH_OFFSET(%rsi), %r11d /* move source image width to %r11d */
 
-	cmpl IMAGE_HEIGHT_OFFSET(%rdi), %r10d
+	cmpl IMAGE_HEIGHT_OFFSET(%rdi), %r10d /* base_img->height != overlay_img->height */
 	jne .LcompositeFails
 
-	cmpl IMAGE_WIDTH_OFFSET(%rdi), %r11d
+	cmpl IMAGE_WIDTH_OFFSET(%rdi), %r11d /* base_img->width != overlay_img->width */
 	jne .LcompositeFails
 	
 	movq IMAGE_DATA_OFFSET(%rsi), %rbx /* move pointer to forground data array to %rbx */
@@ -1096,11 +1093,11 @@ imgproc_composite:
 		jmp .LcompositeLoop
 	
 	.LcompositeLoopEnd:
-		movl $1, %eax
+		movl $1, %eax /* return 1 */
 		jmp .LreturnCode
 
 	.LcompositeFails:
-		movl $0, %eax
+		movl $0, %eax /* return 0 */
 
 	.LreturnCode:
 		popq %r15 /* pop registers from stack */
@@ -1113,7 +1110,3 @@ imgproc_composite:
 		popq %rbp
 	
 	ret
-
-/*
-vim:ft=gas:
-*/
