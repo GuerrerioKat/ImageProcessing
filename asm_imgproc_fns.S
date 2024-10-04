@@ -28,33 +28,34 @@
  */
 	.globl all_tiles_nonempty
 all_tiles_nonempty:
+	/* ABI Compliant Stack Frame */
 	pushq %rbp
 	movq %rsp, %rbp
 
 	movl %edx, %r10d
 	
 	cmpl $1, %r10d /* n < 1 */
-	jl .LendF
+	jl .LendF /* if true then jump to false */
 	
-	movl %esi, %eax
+	movl %esi, %eax /* height */
 	movl $0, %edx
-	divl %r10d
+	divl %r10d /* divide by n */
 	cmpl $1, %eax /* (height/n) < 1 */
 	jl .LendF
 
-	movl %edi, %eax
+	movl %edi, %eax /* width */
 	movl $0, %edx
-	divl %r10d
+	divl %r10d /* divide by n */
 	cmpl $1, %eax /* (width/n) < 1 */
 	jl .LendF
 
 	.LendT:
-		movl $1, %eax
+		movl $1, %eax /* success, return 1 */
 		popq %rbp
 		ret
 
 	.LendF:
-		movl $0, %eax
+		movl $0, %eax /* fail, return 0 */
 		popq %rbp
 		ret
 
@@ -82,11 +83,11 @@ determine_tile_w:
 	
 	.LcheckRemainderw:
 		cmp %r11d, %edx /* remainder > tile_col */
-		jg .LextraOffsetw
-		jmp .LreturnOffsetw
+		jg .LextraOffsetw /* if true, add 1 to (width/n) */
+		jmp .LreturnOffsetw /* if not, just return (width/n) */
 
 	.LextraOffsetw:
-		incl %eax
+		incl %eax /* increase return val by 1 */
 	
 	.LreturnOffsetw:
 		addq $0, %rsp
@@ -103,6 +104,7 @@ determine_tile_w:
  */
  	.globl determine_tile_x_offset
 determine_tile_x_offset:
+	/* ABI Compliant Stack Frame */
 	pushq %rbp
 	movq %rsp, %rbp
 	subq $8, %rsp
@@ -124,19 +126,19 @@ determine_tile_x_offset:
 		cmpl %ebx, %r15d /* i >= tile_col */
 		jge .LendLoopx
 		
-		movl %r12d, %edi
-		movl %r13d, %esi
-		movl %r15d, %edx
+		movl %r12d, %edi /* width */
+		movl %r13d, %esi /* n */
+		movl %r15d, %edx /* i */
 		call determine_tile_w
-		addl %eax, %r14d
+		addl %eax, %r14d /* offset += determine_tile_w(width, n, i) */
 		
-		incl %r15d
+		incl %r15d /* i++ */
 		jmp .Lloopx
 
 	.LendLoopx:
-		movl %r14d, %eax
+		movl %r14d, %eax /* move offset to return value */
 
-		popq %rbx
+		popq %rbx /* pop registers */
 		popq %r15
 		popq %r14
 		popq %r13
@@ -169,11 +171,11 @@ determine_tile_h:
 	
 	.LcheckRemainderh:
 		cmp %r11d, %edx /* remainder > tile_row */
-		jg .LextraOffseth
-		jmp .LreturnOffseth
+		jg .LextraOffseth /* if true, add 1 to (height/n) */
+		jmp .LreturnOffseth /* if not, just return (height/n) */
 
 	.LextraOffseth:
-		incl %eax
+		incl %eax /* increase return val by 1 */
 	
 	.LreturnOffseth:
 		addq $0, %rsp
@@ -190,6 +192,7 @@ determine_tile_h:
  */
  	.globl determine_tile_y_offset
  determine_tile_y_offset:
+ 	/* ABI Compliant Stack Frame */
 	pushq %rbp
 	movq %rsp, %rbp
 	subq $8, %rsp
@@ -211,19 +214,19 @@ determine_tile_h:
 		cmpl %ebx, %r15d /* i >= tile_row */
 		jge .LendLoopx
 		
-		movl %r12d, %edi
-		movl %r13d, %esi
-		movl %r15d, %edx
-		call determine_tile_w
-		addl %eax, %r14d
+		movl %r12d, %edi /* height */
+		movl %r13d, %esi /* n */
+		movl %r15d, %edx /* i */
+		call determine_tile_h /* determine_tile_h(height, n, i) */
+		addl %eax, %r14d /* offset += determine_tile_h(height, n, i) */
 		
-		incl %r15d
+		incl %r15d /* i++ */
 		jmp .Lloopx
 
 	.LendLoopy:
-		movl %r14d, %eax
+		movl %r14d, %eax /* move offset to return value */
 
-		popq %rbx
+		popq %rbx /* pop registers */
 		popq %r15
 		popq %r14
 		popq %r13
@@ -243,6 +246,7 @@ determine_tile_h:
  */
  	.globl copy_tile
  copy_tile:
+ 	/* ABI Compliant Stack Frame */
 	pushq %rbp
     movq %rsp, %rbp
     subq $40, %rsp
