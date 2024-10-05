@@ -35,7 +35,7 @@ all_tiles_nonempty:
 	movl %edx, %r10d
 	
 	cmpl $1, %r10d /* n < 1 */
-	jl .LendF /* if true then jump to false */
+	jl .LendF /* if true, return false */
 	
 	movl %esi, %eax /* height */
 	movl $0, %edx
@@ -47,7 +47,7 @@ all_tiles_nonempty:
 	movl $0, %edx
 	divl %r10d /* divide by n */
 	cmpl $1, %eax /* (width/n) < 1 */
-	jl .LendF
+	jl .LendF /* if true, return false */
 
 	.LendT:
 		movl $1, %eax /* success, return 1 */
@@ -124,7 +124,7 @@ determine_tile_x_offset:
 
 	.Lloopx:
 		cmpl %ebx, %r15d /* i >= tile_col */
-		jge .LendLoopx
+		jge .LendLoopx /* if true, end the loop */
 		
 		movl %r12d, %edi /* width */
 		movl %r13d, %esi /* n */
@@ -182,7 +182,7 @@ determine_tile_h:
 		popq %rbp
 		ret
 
- /*
+/*
  * uint32_t get_r( uint32_t pixel );
  *
  * Returns the red component of a pixel.
@@ -212,7 +212,7 @@ determine_tile_h:
 
 	.Lloopy:
 		cmpl %ebx, %r15d /* i >= tile_row */
-		jge .LendLoopx
+		jge .LendLoopx /* if true, end the loop */
 		
 		movl %r12d, %edi /* height */
 		movl %r13d, %esi /* n */
@@ -265,38 +265,38 @@ determine_tile_h:
     movq IMAGE_DATA_OFFSET(%rsi), %rbx /* move pointer to source image data array to %rbx */
 
     movl IMAGE_WIDTH_OFFSET(%rsi), %r8d
-    movl %r8d, -4(%rbp) /* move source image width to %r11d */
+    movl %r8d, -4(%rbp) /* move source image width to stackframe */
     movl IMAGE_HEIGHT_OFFSET(%rsi), %r8d
-    movl %r8d, -8(%rbp) /* move source image height to %r11d */
+    movl %r8d, -8(%rbp) /* move source image height to stackframe */
 
     movl IMAGE_WIDTH_OFFSET(%rdi), %r8d
-    movl %r8d, -40(%rbp) /* move output image width to %r11d */
+    movl %r8d, -40(%rbp) /* move output image width to stackframe */
     movl IMAGE_HEIGHT_OFFSET(%rdi), %r8d
-    movl %r8d, -44(%rbp) /* move output image height to %r11d */
+    movl %r8d, -44(%rbp) /* move output image height to stackframe */
 
     //GETTING TILE_W
-    movl -4(%rbp), %edi /* move source image width to %edi */
+    movl -4(%rbp), %edi /* move parameters into argument registrars */
     movl %r14d, %esi
     movl %r13d, %edx
     call determine_tile_w
     movl %eax, -12(%rbp) /* storign tile width */
 
     //GETTING TILE_H
-    movl -8(%rbp), %edi /* move source image width to %edi */
+    movl -8(%rbp), %edi /* move parameters into argument registrars */
     movl %r14d, %esi
     movl %r12d, %edx
     call determine_tile_h
     movl %eax, -16(%rbp) /* storign tile height */
 
     //GETTING X_OFFSET
-    movl -4(%rbp), %edi /* move source image width to %edi */
+    movl -4(%rbp), %edi /* move parameters into argument registrars */
     movl %r14d, %esi
     movl %r13d, %edx
     call determine_tile_x_offset
     movl %eax, -20(%rbp) /* storign tile x offset */
 
     //GETTING Y_OFFSET
-    movl -8(%rbp), %edi /* move source image width to %edi */
+    movl -8(%rbp), %edi /* move parameters into argument registrars */
     movl %r14d, %esi
     movl %r12d, %edx
     call determine_tile_y_offset
@@ -642,14 +642,14 @@ blend_colors:
 	call get_r
 	movl %eax, -8(%rbp) /* holds bg red value */
 
-	movl -4(%rbp), %edi
+	movl -4(%rbp), %edi /* move parameters into argument registrars */
 	movl -8(%rbp), %esi
-	movl %r14d, %edx /* a */
+	movl %r14d, %edx /* alpha */
 	call blend_components
 	movl %eax, -12(%rbp) /* storing local variables of the red component */
 
 	//BLENDING GREEN COMPONENT VALUES
-	movl %r12d, %edi
+	movl %r12d, %edi 
 	call get_g
 	movl %eax, -4(%rbp) /* holds fg green value */
 
@@ -657,9 +657,9 @@ blend_colors:
 	call get_g
 	movl %eax, -8(%rbp) /* holds bg green value */
 
-	movl -4(%rbp), %edi
+	movl -4(%rbp), %edi /* move parameters into argument registrars */
 	movl -8(%rbp), %esi
-	movl %r14d, %edx /* a */
+	movl %r14d, %edx /* alpha */
 	call blend_components
 	movl %eax, -16(%rbp) /* storing blended green component */
 
@@ -672,17 +672,17 @@ blend_colors:
 	call get_b
 	movl %eax, -8(%rbp) /* holds bg green value */
 
-	movl -4(%rbp), %edi
+	movl -4(%rbp), %edi /* move parameters into argument registrars */
 	movl -8(%rbp), %esi
-	movl %r14d, %edx /* a */
+	movl %r14d, %edx /* alpha */
 	call blend_components
 	movl %eax, -20(%rbp) /* storing blended blue component */
 
-	movl -12(%rbp), %edi
+	movl -12(%rbp), %edi /* move parameters into argument registrars */
 	movl -16(%rbp), %esi
 	movl -20(%rbp), %edx
 	movl $255, %ecx
-	call make_pixel
+	call make_pixel /* creating pixel value with the blended colors stored in %eax */
 	
 	popq %r14 /* pop registers */
 	popq %r13
@@ -926,7 +926,7 @@ imgproc_tile:
 		cmpl %ebx, %r15d /* c >= input width */
 		jge .LcolLoopTileEnd /* if true, end column loop */
 
-		movq %r13, %rdi
+		movq %r13, %rdi /* move parameters into argument registrars */
 		movq %r12, %rsi
 		movl %r14d, %edx
 		movl %r15d, %ecx
